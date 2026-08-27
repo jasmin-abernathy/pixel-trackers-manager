@@ -1,0 +1,48 @@
+name: Bug
+about: Signaler un comportement incorrect de Pixel Trackers Manager
+title: "[Bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: "Merci de ne pas publier de données personnelles, mots de passe, clés API ou données de sites clients."
+  - type: input
+    id: version
+    attributes:
+      label: Version de PTM
+      placeholder: "0.0.2-test4"
+    validations:
+      required: true
+  - type: input
+    id: wordpress
+    attributes:
+      label: Version de WordPress / PHP
+      placeholder: "WordPress 6.x, PHP 8.x"
+  - type: textarea
+    id: problem
+    attributes:
+      label: Que se passe-t-il ?
+      description: Décrivez le résultat observé.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Étapes pour reproduire
+      placeholder: |
+        1. Ouvrir…
+        2. Cliquer…
+        3. Constater…
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Résultat attendu
+    validations:
+      required: true
+  - type: textarea
+    id: builders
+    attributes:
+      label: Constructeur / extensions concernés
+      description: Par exemple Gutenberg, Elementor, Divi, MailPoet, UpdraftPlus…

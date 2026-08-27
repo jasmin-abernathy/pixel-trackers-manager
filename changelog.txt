@@ -1,0 +1,65 @@
+Pixel Trackers Manager 0.0.2-test4
+
+- Navigation pastel continue, Assistant RGPD dans un onglet dédié et sommaires de sections légers.
+- Vue d’ensemble responsive sans débordement horizontal ; cartes et couverture documentaire davantage cliquables.
+- Les pages WordPress non publiques trouvées pendant un scan sont distinguées des vraies erreurs HTTP et peuvent être publiées après vérification.
+- Création native des nouvelles pages juridiques Elementor et Divi 5, avec compatibilité Divi ancien format et repli WordPress conservateur.
+- Séparation éditeur du site / responsable du traitement / contact public / contact droits / DPO désigné ; complétude des mentions légales renforcée.
+- Outils externes (e-mail, WhatsApp, réservation, HelloAsso, formulaires, paiements, fichiers), conseils d’e-mailing et premiers contrôles de formulaires.
+- Adaptateurs de conservation Gravity Forms/WooCommerce/MailPoet et détection prudente des extensions de sauvegarde, UpdraftPlus en priorité.
+- Bannière PTM indépendante des builders ; éditeurs visuels exclus du blocage et adaptation Divi Maps/reCAPTCHA après consentement.
+- Trois niveaux de lecture : problème constaté, à vérifier, conseil.
+
+Pixel Trackers Manager 0.0.2-test3
+- Correctif critique : le paramètre de lancement automatique du premier scan est désormais consommé avant le démarrage et supprimé avant le rafraîchissement final ; une analyse terminée ne peut plus se relancer toute seule.
+- Assistant : les actions Retour / Continuer sont regroupées en bas à droite, avec Continuer comme action la plus à droite.
+
+Pixel Trackers Manager 0.0.2-test2
+- Onboarding visuel en quatre étapes, inspiré des assistants de configuration modernes : bienvenue, pages légales, consentement, premier scan.
+- L’onboarding se déclenche à la première ouverture de Pixel Trackers Manager et reste reprenable ; l’activation elle-même reste silencieuse.
+- Dernière étape : l’analyse complète devient l’action recommandée, sans jamais être lancée sans clic explicite.
+- Encadré du Tableau de bord WordPress tant que PTM n’est pas configuré, puis rappel léger tant qu’aucune première analyse complète n’a été faite ; les deux sont masquables par utilisateur.
+- Présentation de la gestion du consentement clarifiée : barre ou encart, style du site ou style neutre, conservation d’une CMP tierce lorsqu’elle est détectée.
+- Prototype de mode test administrateur du consentement : aucun choix, refus, statistiques seules, tout accepter.
+- Empreinte de configuration du consentement : les choix enregistrés sont invalidés quand les services/catégories couverts changent de façon structurelle.
+- Assistant accéléré : la sauvegarde AJAX d’un bloc n’a plus le droit de relancer un audit HTTP des pages légales.
+- Aperçu final de l’assistant rafraîchi en AJAX depuis les données locales, sans rechargement complet de la page.
+- Scan : 100 % signifie que toutes les URL prévues ont reçu un résultat final, y compris celles en erreur ; nombre d’erreurs affiché séparément.
+- Le retry ciblé conserve les résultats réussis et ne relance que les URL en échec.
+- Détection expérimentale des Google Fonts chargées à distance, signalées comme ressource externe et non comme traceur.
+- Vue d’ensemble plus navigable : KPI, carte consentement, actions et titres récapitulatifs mènent aux sections correspondantes.
+- Refonte visuelle : onglets raccordés au contenu, coins extérieurs arrondis, boutons secondaires pâles, cartes plus douces et cohérentes.
+
+Pixel Trackers Manager 0.0.2-test1
+- Assistant de configuration lancé à la première ouverture du plugin, pas à l’activation.
+- Détection renforcée des trois pages juridiques via titre, contenu local et données de builders reconnues.
+- Sélection manuelle ou création explicite en brouillon d’une page réellement absente.
+- Protection anti-doublon avant création d’une page juridique.
+- Pages créées avec les shortcodes publics [ptm_legal_notice], [ptm_privacy_policy] et [ptm_cookies].
+- Détection des constructeurs rendue strictement page par page ; aucune mention Divi/Elementor sur une page WordPress native.
+- Suppression des notes techniques génériques sur Divi dans le parcours normal.
+- Scan : détail des URL en erreur et nouvel essai ciblé des seules pages échouées.
+- Assistant initial relançable depuis Réglages.
+- Les brouillons juridiques ne sont pas ajoutés au crawl public tant qu’ils ne sont pas publiés.
+
+Pixel Trackers Manager 0.0.1
+- Première version publique. Les numéros 0.1 à 0.9 utilisés pendant la conception restent un historique de développement interne et ne font pas partie du versionnement public.
+- Analyse du site accélérée : jusqu'à trois pages sont traitées par requête avec une limite de temps prudente pour les hébergements mutualisés.
+- Une page inaccessible ou en erreur est enregistrée comme telle sans interrompre l'analyse des autres pages.
+- Décodage des titres corrigé pour les accents, apostrophes et entités HTML.
+- Score documentaire simplifié : chaque exigence réellement applicable compte une fois ; les situations non applicables et les champs facultatifs silencieux ne réduisent pas le score.
+- Assistant : une information inconnue n'est plus assimilée automatiquement à une erreur. Une question conditionnelle ne revient que si l'utilisateur a déclaré que la situation s'applique ou si Pixel Trackers Manager possède un signal technique pertinent.
+- Mentions légales : les champs utiles mais non indispensables ne bloquent plus la publication du contenu généré.
+- Publication : action groupée pour mettre à jour toutes les pages prises en charge en une fois.
+- Elementor : lecture locale préservée, insertion explicite des documents et widget natif léger « Gérer mes choix ».
+- Divi 4 : lecture des modules et insertion explicite préservées.
+- Divi 5 : lecture et rendu pris en charge ; insertion volontairement manuelle par code court lorsque la structure ne peut pas être modifiée sans risque.
+- Autres constructeurs : détection conservatrice de Bricks, Beaver Builder, WPBakery, Oxygen, Breakdance, Brizy, SiteOrigin et Avada afin d'empêcher toute réécriture automatique d'une structure non prise en charge.
+- Bannière de consentement native optionnelle, désactivée par défaut à l'installation.
+- Lorsque la bannière est activée, les scripts et contenus externes facultatifs reconnus sont neutralisés avant le choix, y compris plusieurs cas d'ajout dynamique.
+- Garde-fou précoce ajouté au début de la page pour intercepter les chargeurs connus imprimés directement par certains thèmes ou constructeurs avant les scripts WordPress habituels.
+- Les actions « Tout accepter » et « Tout refuser » partagent exactement le même traitement visuel ; aucune option facultative n'est cochée par défaut.
+- Fermer la bannière sans répondre conserve le blocage protecteur.
+- Préférences enregistrées localement dans le navigateur, durée configurable et accès permanent « Gérer mes choix ».
+- Héritage visuel automatique possible depuis Elementor, Divi, Gutenberg ou le thème, sans reprendre une différence de couleur qui favoriserait l'acceptation.
+- Migration des données des versions de développement vers le namespace public Pixel Trackers Manager.

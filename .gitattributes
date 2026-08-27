@@ -1,0 +1,18 @@
+* text=auto eol=lf
+*.php text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.svg text eol=lf
+
+# Keep development-only GitHub files out of git archive builds
+.github export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.editorconfig export-ignore
+CONTRIBUTING.md export-ignore
+SECURITY.md export-ignore

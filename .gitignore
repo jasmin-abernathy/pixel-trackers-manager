@@ -1,0 +1,25 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local / temporary
+.env
+.env.*
+*.log
+*.tmp
+*.bak
+.phpunit.result.cache
+coverage/
+tmp/
+build/
+dist/
+
+# Generated archives belong in GitHub Releases, not in Git history
+*.zip
+
+# Optional development dependencies
+node_modules/
