@@ -1,14 +1,17 @@
-# Code of conduct
+# Project Code of Conduct
 
-This project welcomes disagreement about implementation and product choices, but not hostility toward contributors or users.
+[Version française](CODE_OF_CONDUCT.fr.md)
 
-Please:
+Pixel Trackers Manager welcomes technical feedback, testing reports and contributions from people with different levels of WordPress experience.
 
-- discuss the work rather than the person;
-- assume that cognitive load and communication needs differ between people;
-- avoid mocking disability, neurodivergence, mistakes or communication style;
-- protect participant and tester privacy;
-- make criticism specific enough to act on;
-- accept a clear “no” to a feature when it conflicts with the project's documented safeguards.
+Participants are expected to:
 
-Maintainers may remove contributions or participation that repeatedly make collaboration unsafe or unproductive.
+- discuss ideas and code without personal attacks;
+- criticise the implementation, not the person;
+- avoid discriminatory, threatening, harassing or deliberately humiliating behaviour;
+- respect privacy: never publish another person's personal data, credentials or client information;
+- keep issue discussions relevant enough that maintainers and testers can act on them.
+
+Maintainers may edit, hide, close or remove contributions that create a safety, privacy or harassment problem, or that repeatedly prevent productive collaboration.
+
+Security reports should follow `SECURITY.md` rather than exposing sensitive details publicly.

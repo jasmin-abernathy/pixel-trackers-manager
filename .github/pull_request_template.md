@@ -1,15 +1,17 @@
-## Résumé
+## Summary / Résumé
 
-Décrire brièvement le changement.
+Describe the change briefly. / Décrivez brièvement le changement.
 
-## Vérifications
+## Checks / Vérifications
 
-- [ ] PHP lint OK si du PHP a changé
-- [ ] JavaScript syntax OK si du JS a changé
-- [ ] Test d'activation WordPress effectué
-- [ ] Aucun secret / donnée personnelle ajouté au dépôt
-- [ ] Documentation ou changelog mis à jour si nécessaire
+- [ ] PHP lint passed if PHP changed / lint PHP OK si du PHP a changé
+- [ ] JavaScript syntax check passed if JS changed / syntaxe JavaScript OK si du JS a changé
+- [ ] WordPress activation tested / activation WordPress testée
+- [ ] No secret, personal data or client export added / aucun secret, donnée personnelle ou export client ajouté
+- [ ] Documentation or changelog updated if needed / documentation ou changelog mis à jour si nécessaire
 
-## Impact utilisateur
+## User impact / Impact utilisateur
 
-Décrire ce qui change dans l'interface ou le comportement du plugin.
+Explain any change to the interface, public output, scan behaviour, legal-document handling or consent behaviour.
+
+Décrivez tout changement concernant l’interface, le rendu public, le scan, les documents juridiques ou le consentement.

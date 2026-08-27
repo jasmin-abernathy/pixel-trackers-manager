@@ -1,15 +1,20 @@
-# Politique de sécurité
+# Security Policy
 
-## Signaler une vulnérabilité
+[Version française](SECURITY.fr.md)
 
-Pour une vulnérabilité exploitable ou un problème pouvant exposer des données :
+## Reporting a vulnerability
 
-1. n'ouvrez pas d'issue publique contenant les détails d'exploitation ;
-2. utilisez **Private vulnerability reporting** / les avis de sécurité GitHub lorsque cette fonction est activée sur le dépôt ;
-3. indiquez la version concernée, les étapes de reproduction et l'impact observé.
+If you discover a vulnerability that could expose data, bypass permissions, compromise a WordPress site, or weaken PTM's consent protections:
 
-Les bugs fonctionnels sans enjeu de sécurité peuvent être signalés avec le modèle d'issue « Bug ».
+1. do **not** publish exploitation details in a public issue;
+2. use GitHub Private Vulnerability Reporting / Security Advisories when enabled for the repository;
+3. include the affected PTM version, reproduction steps, expected impact, and any relevant environment details;
+4. remove personal data, credentials and client information from screenshots or logs.
 
-## Versions
+Ordinary functional bugs with no security impact can use the public Bug issue template.
 
-Le projet est actuellement en phase de test (`0.0.2-test4`). Les correctifs de sécurité sont appliqués à la branche de développement active puis reportés vers `main` après validation.
+## Supported versions
+
+Pixel Trackers Manager is currently in pre-release testing (`0.0.2-test4`). Security fixes target the active development line and are moved into the stable test branch after validation.
+
+No pre-release build should be treated as a long-term supported security release.
