@@ -7,6 +7,8 @@ Pixel Trackers Manager (PTM) est un assistant WordPress **local-first** d’audi
 Il aide l’administrateur à comprendre ce que fait réellement son site : repérer les traceurs et services tiers, contrôler les pages légales, documenter les pratiques liées aux données et, s’il le souhaite, gérer le consentement des visiteurs.
 
 > **État actuel :** version de test `0.0.2-test4`. PTM n’est pas un outil de certification juridique et ne remplace pas une analyse adaptée à l’activité réelle de l’organisation.
+>
+> **Synchronisation du dépôt — 30 août 2026 :** `0.0.2-test4` reste la version de référence. Aucune décision produit postérieure ne justifie un changement de version ; la documentation et la matrice de test intègrent désormais explicitement la validation WordPress 7.1 avant une soumission à WordPress.org.
 
 ## Principes du projet
 
@@ -61,12 +63,15 @@ Prérequis de la version de test :
 - WordPress 6.5+
 - PHP 7.4+
 
+Les métadonnées du plugin ciblent actuellement WordPress 7.1. Avant toute publication d’une build sur WordPress.org, la section dédiée à WordPress 7.1 dans la checklist courante doit être validée sur cette build.
+
 ## Documentation
 
 - [`README.md`](README.md) — présentation du projet en anglais.
+- [`docs/STATUS-2026-08-30.md`](docs/STATUS-2026-08-30.md) — dernier point de synchronisation du produit et du dépôt.
 - [`docs/USER-GUIDE.fr.md`](docs/USER-GUIDE.fr.md) — guide utilisateur français.
 - [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md) — guide utilisateur anglais.
-- `docs/TESTS-0.0.2-test4.md` — checklist de validation actuelle.
+- `docs/TESTS-0.0.2-test4.md` — checklist de validation actuelle, incluant WordPress 7.1.
 - `docs/CAHIER-DES-CHARGES.md` — cahier des charges et feuille de route interne.
 - `changelog.txt` — historique détaillé des versions de test.
 - [`CONTRIBUTING.fr.md`](CONTRIBUTING.fr.md) — guide de contribution en français.
@@ -82,6 +87,7 @@ Avant de retenir une version candidate à la publication, PTM doit au minimum pa
 - les contrôles de syntaxe JavaScript ;
 - des tests d’activation/désactivation WordPress ;
 - la checklist manuelle de la version courante ;
+- la validation explicite sous WordPress 7.1 tant que les métadonnées annoncent `Tested up to: 7.1` ;
 - les vérifications spécifiques WordPress.org lorsque nous sélectionnerons une build pour le catalogue.
 
 ## Signaler un problème
