@@ -8,6 +8,19 @@ Cette version est un build de test. Tester de préférence sur une copie ou un W
 - [ ] Mise à jour depuis 0.0.2-test3 sans perte des réglages existants.
 - [ ] Première ouverture de PTM reprend correctement l’onboarding si nécessaire.
 
+## 1.1 Validation WordPress 7.1
+
+WordPress 7.1 est sorti le 19 août 2026. Le `readme.txt` indique `Tested up to: 7.1` : cette mention doit correspondre à un test réel réussi avant toute publication.
+
+- [ ] Installation propre et activation de PTM sur WordPress 7.1 stable.
+- [ ] Mise à jour d’un site de test vers WordPress 7.1 avec PTM déjà actif, sans erreur fatale ni perte de réglages.
+- [ ] Onboarding, onglets d’administration, sauvegardes AJAX et lancement du scanner fonctionnent sous 7.1.
+- [ ] Création puis réouverture d’une page juridique Gutenberg sans erreur dans l’éditeur de blocs 7.1 exécuté dans son iframe.
+- [ ] Les styles/scripts d’administration PTM ne contaminent pas le canevas de l’éditeur de blocs et le rendu public reste inchangé.
+- [ ] Les shortcodes PTM restent utilisables dans Gutenberg sous 7.1.
+- [ ] Avec `WP_DEBUG` actif sur le site de test, aucune nouvelle erreur PHP bloquante liée à WordPress 7.1 n’apparaît pendant le parcours P0.
+- [ ] La mention `Tested up to: 7.1` n’est conservée dans la build candidate WordPress.org qu’après validation de cette section.
+
 ## 2. Navigation / responsive
 - [ ] Onglets pastel continus, raccordés au panneau de contenu.
 - [ ] Aucun onglet actif blanc/carré isolé.
