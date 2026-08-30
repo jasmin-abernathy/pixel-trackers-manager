@@ -5,6 +5,7 @@
     var storageKey = cfg.storageKey || 'pixel_trackers_manager_consent_v1';
     var current = null;
     var lastFocusedElement = null;
+    var mountedRoot = null;
 
     function readChoice() {
         try {
@@ -275,13 +276,29 @@
         } catch (e) {}
     }
 
+    function announceDialogEvent(name) {
+        try {
+            document.dispatchEvent(new CustomEvent('pixel-trackers-manager:consent-' + name));
+        } catch (e) {}
+    }
+
     function syncEarlyGuard(choice) {
         if (window.PixelTrackersManagerConsentEarly && typeof window.PixelTrackersManagerConsentEarly.setCurrent === 'function') {
             window.PixelTrackersManagerConsentEarly.setCurrent(choice);
         }
     }
 
+    function normaliseChoice(choice) {
+        choice = choice || {};
+        return {
+            statistics: choice.statistics === true,
+            external: choice.external === true,
+            marketing: choice.marketing === true
+        };
+    }
+
     function saveChoice(choice) {
+        choice = normaliseChoice(choice);
         choice.savedAt = Date.now();
         choice.fingerprint = cfg.fingerprint || '';
         if (!cfg.preview && !cfg.testMode) {
@@ -308,14 +325,60 @@
     }
 
     function bannerRoot() {
-        return document.getElementById('pixel-trackers-manager-consent');
+        if (mountedRoot) {
+            return mountedRoot;
+        }
+        mountedRoot = document.getElementById('pixel-trackers-manager-consent');
+        return mountedRoot;
+    }
+
+    function mountConsentRoot() {
+        var root = bannerRoot();
+        if (!root || !document.body) {
+            return root;
+        }
+        if (root.parentNode !== document.body) {
+            nativeAppendChild.call(document.body, root);
+        }
+        root.setAttribute('data-ptm-mounted', 'body');
+        return root;
+    }
+
+    function syncPreferenceToggles(root) {
+        if (!root) {
+            return;
+        }
+        root.querySelectorAll('[data-ptm-category-toggle]').forEach(function (toggle) {
+            var category = toggle.getAttribute('data-ptm-category-toggle');
+            toggle.checked = !!(current && current[category] === true);
+        });
+    }
+
+    function setPreferencesVisible(root, visible) {
+        if (!root) {
+            return;
+        }
+        var preferences = root.querySelector('.ptm-consent-preferences');
+        var customize = root.querySelector('[data-ptm-action="customize"]');
+        if (!preferences) {
+            return;
+        }
+        if (visible) {
+            syncPreferenceToggles(root);
+        }
+        preferences.hidden = !visible;
+        if (customize) {
+            customize.setAttribute('aria-expanded', visible ? 'true' : 'false');
+        }
     }
 
     function hideBanner(restoreFocus) {
         var root = bannerRoot();
         if (root) {
             root.hidden = true;
+            root.setAttribute('aria-hidden', 'true');
         }
+        announceDialogEvent('closed');
         if (restoreFocus && lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
             try {
                 lastFocusedElement.focus();
@@ -325,23 +388,31 @@
         }
     }
 
-    function showBanner(force) {
-        var root = bannerRoot();
+    function showBanner(force, openPreferences) {
+        var root = mountConsentRoot();
         if (!root) {
             return;
         }
         if (!force && current && !cfg.preview) {
             root.hidden = true;
+            root.setAttribute('aria-hidden', 'true');
             return;
         }
         lastFocusedElement = document.activeElement;
+        setPreferencesVisible(root, !!openPreferences);
         root.hidden = false;
+        root.setAttribute('aria-hidden', 'false');
+        announceDialogEvent('opened');
         var dialog = root.querySelector('.ptm-consent-dialog');
         if (dialog) {
             window.setTimeout(function () {
                 dialog.focus();
             }, 0);
         }
+    }
+
+    function openPreferences() {
+        showBanner(true, true);
     }
 
     function closeWithoutChoice() {
@@ -390,7 +461,7 @@
         }
 
         var root = bannerRoot();
-        if (!root) {
+        if (!root || !document.body) {
             return;
         }
 
@@ -408,55 +479,108 @@
         // Brand colours are deliberately not copied. Accept and reject must remain equivalent.
     }
 
+    function eventClosest(event, selector) {
+        var target = event.target;
+        if (!target) {
+            return null;
+        }
+        if (target.nodeType === 3) {
+            target = target.parentElement;
+        }
+        return target && typeof target.closest === 'function' ? target.closest(selector) : null;
+    }
+
+    function handleDocumentClick(event) {
+        var openControl = eventClosest(event, '[data-ptm-consent-open], .ptm-consent-open');
+        if (openControl) {
+            event.preventDefault();
+            openPreferences();
+            return;
+        }
+
+        var actionControl = eventClosest(event, '#pixel-trackers-manager-consent [data-ptm-action], #pixel-trackers-manager-consent .ptm-consent-close');
+        if (!actionControl) {
+            return;
+        }
+
+        var root = bannerRoot();
+        if (!root || !root.contains(actionControl)) {
+            return;
+        }
+
+        event.preventDefault();
+        var action = actionControl.getAttribute('data-ptm-action');
+        if (!action && actionControl.classList.contains('ptm-consent-close')) {
+            action = 'close';
+        }
+
+        if (action === 'reject') {
+            saveAll(false);
+        } else if (action === 'accept') {
+            saveAll(true);
+        } else if (action === 'customize') {
+            var preferences = root.querySelector('.ptm-consent-preferences');
+            setPreferencesVisible(root, !!(preferences && preferences.hidden));
+        } else if (action === 'save') {
+            var choice = { statistics: false, external: false, marketing: false };
+            root.querySelectorAll('[data-ptm-category-toggle]').forEach(function (toggle) {
+                choice[toggle.getAttribute('data-ptm-category-toggle')] = !!toggle.checked;
+            });
+            saveChoice(choice);
+        } else if (action === 'close') {
+            closeWithoutChoice();
+        }
+    }
+
+    function exposePublicApi() {
+        var api = {
+            open: function (mode) {
+                showBanner(true, mode === true || mode === 'preferences' || !!(mode && mode.preferences));
+            },
+            openPreferences: openPreferences,
+            close: function () {
+                hideBanner(true);
+            },
+            getChoice: function () {
+                if (!current) {
+                    return null;
+                }
+                return {
+                    statistics: current.statistics === true,
+                    external: current.external === true,
+                    marketing: current.marketing === true,
+                    savedAt: current.savedAt || null,
+                    fingerprint: current.fingerprint || ''
+                };
+            },
+            saveChoice: function (choice) {
+                saveChoice(choice);
+            }
+        };
+
+        window.PixelTrackersManagerConsentAPI = api;
+        cfg.open = api.open;
+        cfg.openPreferences = api.openPreferences;
+        cfg.close = api.close;
+        cfg.getChoice = api.getChoice;
+        cfg.saveChoice = api.saveChoice;
+        window.PixelTrackersManagerConsent = cfg;
+    }
+
     function initialise() {
         current = cfg.preview ? null : (testChoice() || readChoice());
         syncEarlyGuard(current);
+        mountConsentRoot();
         activateAllowedResources();
         reinitialiseDiviIntegrations();
         inheritSiteStyle();
 
         var root = bannerRoot();
         if (root) {
-            root.addEventListener('click', function (event) {
-                var button = event.target.closest('[data-ptm-action]');
-                if (!button) {
-                    return;
-                }
-
-                var action = button.getAttribute('data-ptm-action');
-                if (action === 'reject') {
-                    saveAll(false);
-                } else if (action === 'accept') {
-                    saveAll(true);
-                } else if (action === 'customize') {
-                    var preferences = root.querySelector('.ptm-consent-preferences');
-                    preferences.hidden = !preferences.hidden;
-                    button.setAttribute('aria-expanded', preferences.hidden ? 'false' : 'true');
-                } else if (action === 'save') {
-                    var choice = { statistics: false, external: false, marketing: false };
-                    root.querySelectorAll('[data-ptm-category-toggle]').forEach(function (toggle) {
-                        choice[toggle.getAttribute('data-ptm-category-toggle')] = !!toggle.checked;
-                    });
-                    saveChoice(choice);
-                }
-            });
-
             root.addEventListener('keydown', function (event) {
                 trapKeyboard(event, root);
             });
-
-            var close = root.querySelector('.ptm-consent-close');
-            if (close) {
-                close.addEventListener('click', closeWithoutChoice);
-            }
         }
-
-        document.addEventListener('click', function (event) {
-            if (event.target.closest('.ptm-consent-open')) {
-                event.preventDefault();
-                showBanner(true);
-            }
-        });
 
         var closedThisSession = false;
         try {
@@ -466,9 +590,14 @@
         }
 
         if (!current && !closedThisSession) {
-            showBanner(false);
+            showBanner(false, false);
         }
     }
+
+    // Register this as soon as the head script executes. Builders can attach their own
+    // bubbling handlers later; PTM sees consent controls first in the capture phase.
+    document.addEventListener('click', handleDocumentClick, true);
+    exposePublicApi();
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initialise);
