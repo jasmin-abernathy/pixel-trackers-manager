@@ -81,9 +81,19 @@ WordPress 7.1 est sorti le 19 août 2026. Le `readme.txt` indique `Tested up to:
 
 ## 9. Consentement / builders
 - [ ] Barre fixe et encart centré PTM indépendants du builder.
+- [ ] Sur le front, `#pixel-trackers-manager-consent` est monté directement sous `<body>` avec `data-ptm-mounted="body"`.
+- [ ] Sur Divi, la bannière reste visuellement au-dessus de `#page-container`, des sections/modules et des éléments positionnés/sticky.
+- [ ] Sur Elementor, la bannière reste visuellement au-dessus des containers, popups et éléments positionnés/sticky.
 - [ ] Le moteur réel est désactivé dans Elementor/Divi Visual Builder.
 - [ ] Accepter et Refuser gardent un poids visuel équivalent.
 - [ ] Fermer sans choisir ne vaut pas acceptation.
+- [ ] Après un choix enregistré, le bouton de footer **Gérer mes choix** rouvre directement le panneau des préférences avec les choix actuels préremplis.
+- [ ] Un bouton/lien Divi portant la classe `ptm-consent-open` rouvre les préférences.
+- [ ] Un bouton/lien Elementor portant l’attribut `data-ptm-consent-open="preferences"` rouvre les préférences.
+- [ ] Même si un handler Divi/Elementor exécute `stopPropagation()` en phase de bubbling, le contrôle PTM continue à fonctionner grâce au listener capture.
+- [ ] `window.PixelTrackersManagerConsentAPI.openPreferences()` ouvre le panneau des préférences.
+- [ ] `window.PixelTrackersManagerConsentAPI.getChoice()` renvoie l’état enregistré sans modifier le consentement.
+- [ ] Escape ferme le dialogue et le focus revient au contrôle qui l’avait ouvert lorsque celui-ci existe encore.
 - [ ] Divi Maps se réinitialise après consentement si nécessaire.
 - [ ] reCAPTCHA n’est pas automatiquement qualifié de traceur marketing ; son traitement reste contextuel.
 
