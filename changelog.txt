@@ -1,5 +1,6 @@
 Pixel Trackers Manager 0.0.2-test4
 
+- Synchronisation du dépôt au 30 août 2026 : version de référence conservée, état produit consolidé et matrice de validation WordPress 7.1 ajoutée sans changement fonctionnel du build.
 - Navigation pastel continue, Assistant RGPD dans un onglet dédié et sommaires de sections légers.
 - Vue d’ensemble responsive sans débordement horizontal ; cartes et couverture documentaire davantage cliquables.
 - Les pages WordPress non publiques trouvées pendant un scan sont distinguées des vraies erreurs HTTP et peuvent être publiées après vérification.
