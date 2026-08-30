@@ -116,8 +116,11 @@ final class Pixel_Trackers_Manager_Consent {
     public function enqueue() {
         if ( ! $this->enabled() ) { return; }
         $settings = $this->plugin->public_settings();
-        wp_enqueue_style( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.css', array(), Pixel_Trackers_Manager_Plugin::VERSION );
-        wp_enqueue_script( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.js', array(), Pixel_Trackers_Manager_Plugin::VERSION, false );
+        // Consent UI assets have their own cache suffix during the test cycle so fixes to
+        // the portal/dialog reach Divi/Elementor test sites even before the plugin version changes.
+        $asset_version = Pixel_Trackers_Manager_Plugin::VERSION . '-consent-portal1';
+        wp_enqueue_style( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.css', array(), $asset_version );
+        wp_enqueue_script( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.js', array(), $asset_version, false );
         $test_mode = '';
         if ( current_user_can( 'manage_options' ) && isset( $_GET['pixel_trackers_manager_consent_test'] ) ) {
             $candidate = sanitize_key( wp_unslash( $_GET['pixel_trackers_manager_consent_test'] ) );
@@ -204,9 +207,9 @@ final class Pixel_Trackers_Manager_Consent {
         $this->rendered = true;
         $cats = $this->active_categories();
         ?>
-        <div id="pixel-trackers-manager-consent" class="ptm-consent" data-ptm-style="<?php echo esc_attr( $this->plugin->public_settings()['consent_style'] ); ?>" data-ptm-layout="<?php echo esc_attr( isset( $this->plugin->public_settings()['consent_layout'] ) ? $this->plugin->public_settings()['consent_layout'] : 'bar' ); ?>" hidden>
+        <div id="pixel-trackers-manager-consent" class="ptm-consent" data-ptm-consent-root="1" data-ptm-style="<?php echo esc_attr( $this->plugin->public_settings()['consent_style'] ); ?>" data-ptm-layout="<?php echo esc_attr( isset( $this->plugin->public_settings()['consent_layout'] ) ? $this->plugin->public_settings()['consent_layout'] : 'bar' ); ?>" aria-hidden="true" hidden>
             <div class="ptm-consent-dialog" role="dialog" aria-modal="true" aria-labelledby="ptm-consent-title" aria-describedby="ptm-consent-copy" tabindex="-1">
-                <button type="button" class="ptm-consent-close" aria-label="Fermer sans accepter">×</button>
+                <button type="button" class="ptm-consent-close" data-ptm-action="close" aria-label="Fermer sans accepter">×</button>
                 <div class="ptm-consent-main">
                     <h2 id="ptm-consent-title">Votre choix compte</h2>
                     <p id="ptm-consent-copy">Ce site utilise ce qui est nécessaire à son fonctionnement. Les services facultatifs restent bloqués tant que vous ne les avez pas acceptés.</p>
@@ -233,7 +236,7 @@ final class Pixel_Trackers_Manager_Consent {
         if ( ! $this->rendered ) { $this->render_banner(); }
         $settings = $this->plugin->public_settings();
         if ( ! empty( $settings['consent_footer_link'] ) ) {
-            echo '<div class="ptm-consent-footer-link"><button type="button" class="ptm-consent-open">'.esc_html__('Gérer mes choix','pixel-trackers-manager').'</button></div>';
+            echo '<div class="ptm-consent-footer-link"><button type="button" class="ptm-consent-open" data-ptm-consent-open="preferences" aria-haspopup="dialog">'.esc_html__('Gérer mes choix','pixel-trackers-manager').'</button></div>';
         }
     }
 
