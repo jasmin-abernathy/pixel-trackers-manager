@@ -28,7 +28,31 @@ The setup can be paused, skipped, or relaunched later from Settings.
 
 Pixel Trackers Manager does not try to maximise “accept” clicks. **Accept all** and **Reject all** use the same visual weight. Optional categories start off. Closing the banner is not consent.
 
+The banner is rendered as a global component independent from the page builder. On the front end, PTM mounts it directly below `<body>` so it cannot remain trapped inside a Divi section, Elementor container, or another stacking context that could place it behind the page content.
+
 Visitors can reopen their preferences through **Manage my choices**. Add `[ptm_consent_settings]` wherever you want that control to appear.
+
+For a custom Divi, Elementor, Gutenberg, or theme control, you can use:
+
+```html
+<button type="button" class="ptm-consent-open">Manage my choices</button>
+```
+
+or add this behaviour-only attribute to an existing control:
+
+```html
+data-ptm-consent-open="preferences"
+```
+
+The data attribute is preferable when you want to keep the builder's native button styling untouched.
+
+Advanced integrations can call:
+
+```js
+window.PixelTrackersManagerConsentAPI.openPreferences();
+```
+
+See `docs/CONSENT-INTEGRATION.md` for the full technical integration notes.
 
 ## Page builders
 
@@ -40,6 +64,8 @@ Use the public shortcodes in a Shortcode block or let Pixel Trackers Manager upd
 
 Pixel Trackers Manager reads relevant widget text locally when possible. Legal documents can be inserted after an explicit administrator action. A small Elementor widget is also available for **Manage my choices**.
 
+The consent banner itself is not an Elementor widget. It stays global so its visibility and behaviour do not depend on Elementor's DOM or stacking contexts.
+
 ### Divi 4
 
 Relevant module text can be read locally. Pixel Trackers Manager can add a text module containing the requested shortcode after an explicit action.
@@ -47,6 +73,8 @@ Relevant module text can be read locally. Pixel Trackers Manager can add a text 
 ### Divi 5
 
 The public banner and shortcodes work normally. Pixel Trackers Manager deliberately avoids rewriting a Divi 5 internal page structure when that operation cannot be guaranteed safely. In that case, open Divi and insert the shortcode into a text/code-compatible module.
+
+The consent dialog itself is mounted directly below `<body>`, not inside a Divi module. “Manage my choices” controls are listened to in the capture phase so a later Divi bubbling handler cannot prevent PTM from opening the preferences dialog.
 
 This is intentional: builder compatibility improves the editing experience, but the privacy engine never depends on a builder.
 
