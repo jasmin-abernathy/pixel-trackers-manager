@@ -7,6 +7,8 @@ Pixel Trackers Manager (PTM) is a local-first WordPress privacy audit and docume
 It helps site administrators understand what their WordPress site actually does: detect trackers and third-party services, review legal pages, document relevant data practices, and optionally manage visitor consent.
 
 > **Current status:** test build `0.0.2-test4`. PTM is not a legal certification tool and does not replace advice adapted to the organisation's real activities.
+>
+> **Repository sync — 30 August 2026:** `0.0.2-test4` remains the reference build. No later product decision was found that warrants a version bump; the current documentation and test matrix now explicitly include WordPress 7.1 validation before WordPress.org submission.
 
 ## Core principles
 
@@ -61,12 +63,15 @@ Current test requirements:
 - WordPress 6.5+
 - PHP 7.4+
 
+The plugin metadata currently targets WordPress 7.1. Before a WordPress.org candidate is published, the dedicated WordPress 7.1 section in the current test checklist must pass on the selected build.
+
 ## Documentation
 
 - [`README.fr.md`](README.fr.md) — French project overview.
+- [`docs/STATUS-2026-08-30.md`](docs/STATUS-2026-08-30.md) — latest repository/product synchronisation checkpoint.
 - [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md) — English user guide.
 - [`docs/USER-GUIDE.fr.md`](docs/USER-GUIDE.fr.md) — French user guide.
-- `docs/TESTS-0.0.2-test4.md` — current validation checklist.
+- `docs/TESTS-0.0.2-test4.md` — current validation checklist, including WordPress 7.1.
 - `docs/CAHIER-DES-CHARGES.md` — internal product specification and roadmap (French).
 - `changelog.txt` — detailed test-build history.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution guide.
@@ -82,6 +87,7 @@ Before a release candidate, PTM should at minimum pass:
 - JavaScript syntax checks;
 - WordPress activation/deactivation tests;
 - the current manual validation checklist;
+- explicit WordPress 7.1 validation while the metadata claims `Tested up to: 7.1`;
 - WordPress.org-specific checks when a build is selected for directory submission.
 
 ## Reporting issues
