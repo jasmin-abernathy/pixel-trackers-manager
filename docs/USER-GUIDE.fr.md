@@ -28,7 +28,31 @@ L’assistant peut être quitté puis repris, ou relancé plus tard depuis Régl
 
 PTM n’essaie pas de maximiser les clics sur « Accepter ». **Tout accepter** et **Tout refuser** doivent avoir le même poids visuel. Les catégories facultatives commencent désactivées. Fermer l’interface ne vaut pas consentement.
 
-Les visiteurs peuvent rouvrir leurs préférences avec **Gérer mes choix**. Le shortcode universel est `[ptm_consent_settings]`.
+La bannière est rendue comme un composant global indépendant du constructeur de pages. Au chargement, PTM la place directement sous `<body>` afin qu’elle ne reste pas enfermée dans une section Divi, un container Elementor ou un autre contexte d’empilement pouvant la faire passer derrière le contenu.
+
+Les visiteurs peuvent rouvrir directement leurs préférences avec **Gérer mes choix**. Le shortcode universel est `[ptm_consent_settings]`.
+
+Pour un bouton personnalisé créé dans Divi, Elementor, Gutenberg ou le thème, vous pouvez aussi utiliser :
+
+```html
+<button type="button" class="ptm-consent-open">Gérer mes choix</button>
+```
+
+ou ajouter l’attribut suivant à un contrôle existant :
+
+```html
+data-ptm-consent-open="preferences"
+```
+
+L’attribut est préférable si vous souhaitez conserver entièrement le style natif du bouton fourni par votre constructeur.
+
+Les intégrations avancées peuvent appeler :
+
+```js
+window.PixelTrackersManagerConsentAPI.openPreferences();
+```
+
+La documentation technique complète se trouve dans `docs/CONSENT-INTEGRATION.md`.
 
 ## Constructeurs de pages
 
@@ -40,15 +64,21 @@ Utilisez les shortcodes publics dans un bloc Shortcode ou laissez PTM mettre à 
 
 PTM peut lire localement les contenus utiles et créer de nouvelles pages juridiques avec une structure Elementor lorsqu’il est clairement détecté. Le plugin doit respecter la structure réellement utilisée par le site et éviter de réécrire des données qu’il ne comprend pas assez sûrement.
 
+Le widget **Gérer mes choix** reste disponible. La bannière elle-même n’est pas un widget Elementor : elle reste globale afin d’éviter les problèmes de positionnement et de dépendance au builder.
+
 ### Divi
 
 PTM sait reconnaître les principaux contenus utiles de Divi et travaille à la création native des nouvelles pages juridiques Divi 5. Le moteur de consentement reste indépendant de Divi.
+
+La bannière n’est pas rendue à l’intérieur d’une section ou d’un module Divi : PTM la remonte directement sous `<body>`. Les contrôles « Gérer mes choix » sont écoutés en phase capture afin qu’un script Divi qui intercepte ensuite le clic ne puisse pas empêcher PTM d’ouvrir les préférences.
 
 Quand un module dynamique a été bloqué avant consentement, un adaptateur peut être nécessaire pour le réinitialiser après autorisation, par exemple pour certaines cartes ou protections anti-spam.
 
 ### Autres constructeurs
 
 PTM reconnaît de manière prudente plusieurs constructeurs courants. Lorsqu’aucun adaptateur d’écriture fiable n’existe, il privilégie le shortcode et l’édition manuelle plutôt qu’une modification hasardeuse de la structure interne.
+
+Le moteur public de consentement reste indépendant de ces constructeurs.
 
 ## Shortcodes publics
 
