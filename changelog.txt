@@ -1,6 +1,11 @@
 Pixel Trackers Manager 0.0.2-test4
 
-- Synchronisation du dépôt au 30 août 2026 : version de référence conservée, état produit consolidé et matrice de validation WordPress 7.1 ajoutée sans changement fonctionnel du build.
+- Correctif consentement du 30 août 2026 : la bannière est désormais montée directement sous `<body>` afin de sortir des contextes d’empilement propres à Divi, Elementor et aux thèmes ; les propriétés structurelles du calque sont protégées contre les surcharges de builder.
+- Les contrôles « Gérer mes choix » sont désormais interceptés en phase capture et peuvent être placés dans Divi, Elementor, Gutenberg, un menu, un footer ou une popup via `.ptm-consent-open` ou `data-ptm-consent-open="preferences"`.
+- Ajout de l’API publique `window.PixelTrackersManagerConsentAPI` (`open`, `openPreferences`, `close`, `getChoice`, `saveChoice`) et d’événements d’ouverture/fermeture/mise à jour du consentement.
+- « Gérer mes choix » ouvre directement le panneau de préférences avec les choix courants préremplis ; le focus est restauré après fermeture lorsque possible.
+- Les assets de consentement utilisent temporairement un suffixe de cache dédié pendant le cycle test4 afin que les correctifs de bannière soient effectivement rechargés sur les sites de test.
+- Synchronisation du dépôt au 30 août 2026 : version de référence conservée, état produit consolidé et matrice de validation WordPress 7.1 ajoutée.
 - Navigation pastel continue, Assistant RGPD dans un onglet dédié et sommaires de sections légers.
 - Vue d’ensemble responsive sans débordement horizontal ; cartes et couverture documentaire davantage cliquables.
 - Les pages WordPress non publiques trouvées pendant un scan sont distinguées des vraies erreurs HTTP et peuvent être publiées après vérification.
