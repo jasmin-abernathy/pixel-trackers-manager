@@ -173,8 +173,7 @@ jobs:
           mkdir -p build
 
           wp dist-archive . "$ZIP" \
-            --plugin-dirname=pixel-trackers-manager \
-            --force
+            --plugin-dirname=pixel-trackers-manager
 
           unzip -t "$ZIP"
           unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/pixel-trackers-manager.php'
