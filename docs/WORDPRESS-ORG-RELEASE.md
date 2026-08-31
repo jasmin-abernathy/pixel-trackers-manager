@@ -25,6 +25,8 @@ Avant une vraie publication WordPress.org :
 
 Les tags SVN WordPress.org doivent être des numéros de version composés de chiffres et de points. Ne pas publier un tag SVN `0.0.2-test4`.
 
+Le workflow GitHub refuse également un tag GitHub `v...` de publication s'il n'est pas numérique ou s'il ne correspond pas à la version déclarée dans PTM.
+
 ## 3. Tested up to
 
 `Tested up to` doit indiquer une version de WordPress réellement testée. Ne pas annoncer une version supérieure à la version stable courante, sauf release candidate officiellement disponible.
@@ -47,6 +49,8 @@ Le workflow `.github/workflows/quality-and-build.yml` exécute automatiquement :
 - calcul SHA-256 de l'archive.
 
 Le ZIP est généré automatiquement à chaque push sur `master` et lors d'un lancement manuel du workflow. Il est disponible dans les **Artifacts** de la dernière exécution GitHub Actions.
+
+Les erreurs Plugin Check ne doivent pas être masquées pour obtenir artificiellement un workflow vert. Les erreurs réellement applicables au code deviennent des critères bloquants de publication.
 
 ## 5. Contenu de l'archive
 
@@ -72,16 +76,23 @@ Il ne contient pas :
 - `.git*`, `.editorconfig`, `.distignore` ;
 - archives ou fichiers temporaires.
 
+`.distignore` est la source de vérité pour cette séparation.
+
 ## 6. Readme WordPress.org
 
-Le `readme.txt` doit :
+Depuis 2025, WordPress.org exige que les informations de base du `readme.txt` soumis au répertoire soient fournies en **anglais standard**. Les traductions sont gérées ensuite par l'infrastructure de traduction WordPress.org.
 
+Le `readme.txt` doit donc :
+
+- être rédigé en anglais ;
 - rester concis ;
 - utiliser au maximum cinq tags ;
 - conserver un `Stable tag` identique à la version publiée ;
 - documenter clairement les services externes ;
 - ne pas promettre ou garantir une conformité juridique ;
 - conserver uniquement le changelog de la version courante, l'historique détaillé restant dans `changelog.txt`.
+
+Les README GitHub `README.md` et `README.fr.md` restent bilingues et ne sont pas distribués dans le ZIP WordPress.org.
 
 ## 7. Service externe PTM
 
@@ -94,10 +105,25 @@ Le `readme.txt` doit continuer à préciser :
 - à qui : API Recherche d'entreprises / DINUM ;
 - qu'aucun résultat de scan PTM n'est envoyé avec cette requête.
 
-## 8. Avant soumission initiale
+## 8. Blocages Plugin Check à traiter avant première soumission
+
+Le premier passage réel de Plugin Check 2.1.0 a permis de séparer les faux positifs liés au dépôt de développement des problèmes qui concernent vraiment le plugin distribué.
+
+Les principaux sujets à fermer avant la première soumission sont suivis dans `docs/PLUGIN-CHECK-2026-08-31.md` et comprennent notamment :
+
+- échappement de plusieurs sorties HTML dynamiques ;
+- revue des nonces et de la sanitisation de quelques entrées `POST` / paramètres de preview ;
+- suppression ou remplacement des `error_log()` de développement ;
+- adaptation du garde-fou de consentement précoce afin de respecter les règles WordPress d'enqueue des scripts ;
+- analyse du signalement d'offloading de contenu distant ;
+- stratégie d'internationalisation et dossier `languages/` cohérent.
+
+## 9. Avant soumission initiale
 
 À faire manuellement en plus de la CI :
 
+- [ ] aucune **ERROR** Plugin Check sur l'archive distribuable ;
+- [ ] chaque WARNING restant a été compris et explicitement accepté ;
 - [ ] exécuter la checklist P0 complète ;
 - [ ] tester réellement WordPress 7.1 ;
 - [ ] tester Gutenberg ;
@@ -106,11 +132,10 @@ Le `readme.txt` doit continuer à préciser :
 - [ ] tester la bannière et Gérer mes choix sur mobile ;
 - [ ] tester installation propre, mise à jour et désactivation ;
 - [ ] tester avec `WP_DEBUG` actif ;
-- [ ] examiner toutes les erreurs et avertissements de Plugin Check ;
 - [ ] passer le `readme.txt` dans le validateur officiel WordPress.org ;
 - [ ] installer le ZIP exact généré par GitHub Actions sur un WordPress de test vierge.
 
-## 9. Après approbation WordPress.org
+## 10. Après approbation WordPress.org
 
 WordPress.org fournit un dépôt SVN avec notamment :
 
