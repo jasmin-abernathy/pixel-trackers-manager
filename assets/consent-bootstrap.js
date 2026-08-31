@@ -1,11 +1,12 @@
 (function () {
     'use strict';
 
+    var config = window.PixelTrackersManagerConsentEarlyConfig || {};
     var marker = document.currentScript;
-    var retentionDays = marker ? Number(marker.getAttribute('data-retention-days') || 180) : 180;
+    var retentionDays = Number(config.retentionDays || (marker ? marker.getAttribute('data-retention-days') : 180) || 180);
     var storageKey = 'pixel_trackers_manager_consent_v2';
-    var fingerprint = marker ? String(marker.getAttribute('data-consent-fingerprint') || '') : '';
-    var testMode = marker ? String(marker.getAttribute('data-test-mode') || '') : '';
+    var fingerprint = String(config.fingerprint || (marker ? marker.getAttribute('data-consent-fingerprint') : '') || '');
+    var testMode = String(config.testMode || (marker ? marker.getAttribute('data-test-mode') : '') || '');
     var domains = {
         statistics: [
             'google-analytics.com', 'googletagmanager.com/gtag/js', 'analytics.google.com',

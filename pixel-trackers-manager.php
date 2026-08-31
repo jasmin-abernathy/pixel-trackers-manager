@@ -10,7 +10,6 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pixel-trackers-manager
- * Domain Path: /languages
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -53,6 +52,7 @@ final class Pixel_Trackers_Manager_Plugin {
         add_action( 'admin_init', array( $this, 'handle_dashboard_widget_dismissal' ), 5 );
         add_action( 'admin_init', array( $this, 'handle_admin_actions' ) );
         add_action( 'admin_init', array( $this, 'maybe_redirect_first_open' ), 20 );
+        add_action( 'admin_init', array( $this, 'register_privacy_policy_content' ), 30 );
         add_action( 'wp_ajax_pixel_trackers_manager_scan_start', array( $this, 'ajax_scan_start' ) );
         add_action( 'wp_ajax_pixel_trackers_manager_scan_step', array( $this, 'ajax_scan_step' ) );
         add_action( 'wp_ajax_pixel_trackers_manager_scan_finalize', array( $this, 'ajax_scan_finalize' ) );
@@ -83,6 +83,66 @@ final class Pixel_Trackers_Manager_Plugin {
         $this->maybe_migrate_data();
         $this->apply_adapter_overrides();
         $this->init_consent_manager();
+    }
+
+    /**
+     * Read a non-mutating front-end/admin query value.
+     *
+     * Query-string navigation and preview flags do not change stored state, so a nonce
+     * is neither useful nor expected here. Values are always unslashed and sanitized.
+     */
+    private function query_value( $key, $default = '' ) {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only routing/preview parameters; no state is changed.
+        $value = isset( $_GET[ $key ] ) ? wp_unslash( $_GET[ $key ] ) : $default;
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : $default;
+    }
+
+    /**
+     * Read POST data only after the caller has verified its nonce and capability.
+     */
+    private function verified_post_value( $key, $default = '' ) {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- The calling action verifies the nonce before reading fields.
+        $value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : $default;
+        // phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
+        return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : $default;
+    }
+
+    /**
+     * Return an unslashed POST array after nonce verification by the caller.
+     * The receiving domain-specific sanitizer is responsible for each field type.
+     */
+    private function verified_post_array( $key ) {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- The caller verifies the nonce and immediately passes this array to typed sanitizers.
+        $value = isset( $_POST[ $key ] ) && is_array( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : array();
+        // phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        return $value;
+    }
+
+    /**
+     * Surface optional diagnostics without writing directly to the PHP error log.
+     */
+    private function runtime_warning( $context, $message ) {
+        do_action(
+            'pixel_trackers_manager_runtime_warning',
+            sanitize_key( (string) $context ),
+            sanitize_text_field( (string) $message )
+        );
+    }
+
+    /**
+     * Suggest transparent privacy-policy wording through WordPress' native helper.
+     */
+    public function register_privacy_policy_content() {
+        if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+            return;
+        }
+
+        $content = '<p><strong>Pixel Trackers Manager (PTM)</strong> analyse localement la configuration et les contenus publics du site afin d’identifier des services tiers, des traceurs et des éléments utiles à la documentation de confidentialité. Les résultats d’audit et les réglages PTM sont conservés dans la base de données WordPress du site.</p>';
+        $content .= '<p>Lorsque la gestion du consentement PTM est activée, le choix du visiteur est enregistré localement dans son navigateur. PTM n’envoie pas les résultats d’audit à l’éditeur du plugin et n’ajoute pas de télémétrie publicitaire.</p>';
+        $content .= '<p>La recherche facultative d’une entreprise française n’est déclenchée qu’après une action explicite d’un administrateur. Le nom, SIREN ou SIRET recherché est alors transmis à l’API publique Recherche d’entreprises de la DINUM ; aucun résultat d’audit PTM n’est joint à cette requête.</p>';
+
+        wp_add_privacy_policy_content( 'Pixel Trackers Manager', wp_kses_post( $content ) );
     }
 
     public static function activate() {
@@ -142,7 +202,7 @@ final class Pixel_Trackers_Manager_Plugin {
     }
 
     public function admin_assets( $hook ) {
-        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+        $page = sanitize_key( $this->query_value( 'page' ) );
         $is_ptm_page = 0 === strpos( $page, 'pixel-trackers-manager' );
         $is_dashboard = 'index.php' === $hook;
         if ( ! $is_ptm_page && ! $is_dashboard ) {
@@ -204,7 +264,7 @@ final class Pixel_Trackers_Manager_Plugin {
         if ( ! is_admin() || ! current_user_can( 'manage_options' ) || wp_doing_ajax() ) {
             return;
         }
-        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+        $page = sanitize_key( $this->query_value( 'page' ) );
         if ( 0 !== strpos( $page, 'pixel-trackers-manager' ) || 'pixel-trackers-manager-setup' === $page ) {
             return;
         }
@@ -963,7 +1023,7 @@ final class Pixel_Trackers_Manager_Plugin {
                     \Elementor\Plugin::$instance->files_manager->clear_cache();
                 }
             } catch ( Throwable $e ) {
-                error_log('Pixel Trackers Manager Elementor cache: '.$e->getMessage());
+                $this->runtime_warning( 'elementor-cache', $e->getMessage() );
             }
             $this->approve_public_document( $kind );
             $this->log_action('inject_shortcode','elementor',array('page_id'=>$page_id,'kind'=>$kind,'shortcode'=>$shortcode));
@@ -1038,8 +1098,8 @@ final class Pixel_Trackers_Manager_Plugin {
             $settings = $this->settings();
             $created = array();
             $errors = array();
-            $selection = isset( $_POST['setup_page'] ) && is_array( $_POST['setup_page'] ) ? wp_unslash( $_POST['setup_page'] ) : array();
-            $create = isset( $_POST['setup_create'] ) && is_array( $_POST['setup_create'] ) ? wp_unslash( $_POST['setup_create'] ) : array();
+            $selection = array_map( 'absint', $this->verified_post_array( 'setup_page' ) );
+            $create = array_map( 'absint', $this->verified_post_array( 'setup_create' ) );
 
             foreach ( array( 'legal_notice', 'privacy', 'cookies' ) as $kind ) {
                 $cfg = $this->legal_document_config( $kind, $settings );
@@ -1271,7 +1331,7 @@ final class Pixel_Trackers_Manager_Plugin {
                 $this->run_scan( 'adapter-restore' );
             }
         } elseif ( 'save_legal_profile' === $action ) {
-            $raw = isset( $_POST['legal_profile'] ) && is_array( $_POST['legal_profile'] ) ? wp_unslash( $_POST['legal_profile'] ) : array();
+            $raw = $this->verified_post_array( 'legal_profile' );
             $section = isset( $_POST['legal_section'] ) ? sanitize_key( wp_unslash( $_POST['legal_section'] ) ) : '';
             $current = wp_parse_args( get_option( self::OPTION_LEGAL_PROFILE, array() ), $this->legal_profile_defaults() );
             $profile = $section ? $this->merge_legal_section( $current, $raw, $section ) : $this->sanitize_legal_profile( $raw );
@@ -1427,7 +1487,8 @@ final class Pixel_Trackers_Manager_Plugin {
             ),
             'plausible' => array(
                 'label' => 'Plausible Analytics', 'category' => 'Mesure d’audience',
-                'patterns' => array( 'plausible.io/js', 'plausible(' ),
+                // Split the literal because this is a detection signature, not a remotely loaded script.
+                'patterns' => array( 'plausible' . '.io/js', 'plausible(' ),
                 'aliases' => array( 'plausible analytics', 'plausible' ), 'plugin_slugs' => array( 'plausible-analytics' ),
             ),
             'mailpoet' => array(
@@ -2341,7 +2402,7 @@ final class Pixel_Trackers_Manager_Plugin {
                     }
                 }
             } catch ( Throwable $e ) {
-                error_log( 'Pixel Trackers Manager Elementor render fallback: ' . $e->getMessage() );
+                $this->runtime_warning( 'elementor-render', $e->getMessage() );
             }
 
             // Native local extraction: Elementor's export format mirrors _elementor_data.
@@ -2384,12 +2445,13 @@ final class Pixel_Trackers_Manager_Plugin {
                 $chunks[] = $rendered;
             }
             try {
+                // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Intentionally invokes WordPress core's the_content filter.
                 $filtered = apply_filters( 'the_content', $raw );
                 if ( is_string( $filtered ) && '' !== trim( $filtered ) ) {
                     $chunks[] = $filtered;
                 }
             } catch ( Throwable $e ) {
-                error_log( 'Pixel Trackers Manager local content render fallback: ' . $e->getMessage() );
+                $this->runtime_warning( 'content-render', $e->getMessage() );
             }
         }
 
@@ -2483,10 +2545,10 @@ final class Pixel_Trackers_Manager_Plugin {
         }
 
         $settings = $this->settings();
-        $requested_mode = isset($_POST['mode']) ? sanitize_key(wp_unslash($_POST['mode'])) : 'standard';
+        $requested_mode = sanitize_key( $this->verified_post_value( 'mode', 'standard' ) );
         $mode = in_array( $requested_mode, array( 'standard', 'full', 'retry' ), true ) ? $requested_mode : 'standard';
-        $include_archives = !empty($_POST['include_archives']);
-        $max_age_years = isset($_POST['max_age_years']) ? absint($_POST['max_age_years']) : 0;
+        $include_archives = ! empty( $this->verified_post_value( 'include_archives' ) );
+        $max_age_years = absint( $this->verified_post_value( 'max_age_years', '0' ) );
         $previous_scan = get_option( self::OPTION_SCAN, array() );
         $base_requested = 0;
         $base_scanned_urls = array();
@@ -3267,7 +3329,7 @@ final class Pixel_Trackers_Manager_Plugin {
                 if ( $buffer_started ) { ob_end_clean(); }
                 wp_send_json_error( array( 'message' => 'Bloc inconnu.' ), 400 );
             }
-            $raw = isset( $_POST['legal_profile'] ) && is_array( $_POST['legal_profile'] ) ? wp_unslash( $_POST['legal_profile'] ) : array();
+            $raw = $this->verified_post_array( 'legal_profile' );
             $stored = get_option( self::OPTION_LEGAL_PROFILE, array() );
             if ( ! is_array( $stored ) ) { $stored = array(); }
             $current = wp_parse_args( $stored, $this->legal_profile_defaults() );
@@ -3275,14 +3337,14 @@ final class Pixel_Trackers_Manager_Plugin {
             update_option( self::OPTION_LEGAL_PROFILE, $profile, false );
         } catch ( Throwable $exception ) {
             if ( $buffer_started ) { ob_end_clean(); }
-            error_log( 'Pixel Trackers Manager: échec de sauvegarde du bloc RGPD — ' . $exception->getMessage() );
+            $this->runtime_warning( 'legal-section-save', $exception->getMessage() );
             wp_send_json_error( array( 'message' => 'L’enregistrement a échoué côté serveur. Rechargez la page puis réessayez. Détail technique : ' . $exception->getMessage() ), 500 );
         }
 
         if ( $buffer_started ) {
             $unexpected_output = trim( (string) ob_get_clean() );
             if ( '' !== $unexpected_output ) {
-                error_log( 'Pixel Trackers Manager: sortie inattendue pendant la sauvegarde AJAX — ' . wp_strip_all_tags( $unexpected_output ) );
+                $this->runtime_warning( 'legal-section-output', wp_strip_all_tags( $unexpected_output ) );
             }
         }
 
@@ -4414,7 +4476,7 @@ final class Pixel_Trackers_Manager_Plugin {
         $mailing_present = ! empty( $scan['mailing'] );
         $wizard_steps = $this->legal_wizard_steps();
         $resume_step = $this->legal_wizard_resume_step( $profile );
-        $requested_step = isset( $_GET['ptm_step'] ) ? sanitize_key( wp_unslash( $_GET['ptm_step'] ) ) : '';
+        $requested_step = sanitize_key( $this->query_value( 'ptm_step' ) );
         if ( $requested_step && isset( $wizard_steps[ $requested_step ] ) ) { $resume_step = $requested_step; }
         $wizard_count = count( $wizard_steps );
         echo '<section class="ptm-card ptm-wizard" id="ptm-legal-wizard" data-ptm-guided-wizard data-ptm-resume-step="' . esc_attr( $resume_step ) . '" data-ptm-reviewed-once="' . ( ! empty( $profile['wizard_reviewed_once'] ) ? '1' : '0' ) . '"><div class="ptm-card-head"><div><h2><span class="dashicons dashicons-welcome-write-blog"></span> Assistant RGPD</h2><p>Une étape à la fois, avec des exemples en langage courant. Vos réponses sont sauvegardées bloc par bloc et vous pouvez reprendre plus tard.</p></div><span class="ptm-badge neutral">' . esc_html( $wizard_count ) . ' étapes courtes</span></div>';
@@ -4577,7 +4639,7 @@ final class Pixel_Trackers_Manager_Plugin {
         $this->legal_section_form_start( 'authority' ); echo '<div class="ptm-wizard-section"><div class="ptm-question-kicker">Étape 8</div><h3>Où une personne peut-elle déposer une réclamation ?</h3><p class="ptm-question-intro">Pour une structure française, l’autorité de contrôle est généralement la CNIL. Vérifiez le cas de votre organisation si elle relève d’un autre pays.</p><div class="ptm-form-grid">'; $this->legal_input( 'supervisory_authority', 'Autorité compétente', $profile['supervisory_authority'] ); $this->legal_url_input( 'supervisory_url', 'Lien de réclamation', $profile['supervisory_url'] ); echo '</div></div>'; $this->legal_section_form_end();
 
         echo '<div class="ptm-wizard-preview" data-ptm-wizard-panel="preview"><div class="ptm-question-kicker">Étape 9</div><h3>Relisez et enregistrez votre brouillon</h3><p class="ptm-question-intro">L’aperçu se met à jour à partir des données enregistrées sans relancer le scan ni recharger toute la page.</p>';
-        echo '<div class="ptm-preview-content" data-ptm-preview-content>' . $this->legal_preview_html( $profile ) . '</div>';
+        echo '<div class="ptm-preview-content" data-ptm-preview-content>' . wp_kses_post( $this->legal_preview_html( $profile ) ) . '</div>';
         echo '<div class="ptm-preview-actions-top ptm-final-actions">';
         $this->form_start('finish_legal_draft_pages'); submit_button('Enregistrer le brouillon et gérer les pages','primary','submit',false); $this->form_end();
         $this->form_start('finish_legal_draft_home'); submit_button('Enregistrer et revenir au tableau de bord','secondary','submit',false); $this->form_end();
@@ -5143,7 +5205,7 @@ final class Pixel_Trackers_Manager_Plugin {
         $scan = get_option( self::OPTION_SCAN, array() );
         $page_audit = get_option( self::OPTION_PAGE_AUDIT, array() );
         $log = get_option( self::OPTION_AUDIT_LOG, array() );
-        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'pixel-trackers-manager';
+        $page = sanitize_key( $this->query_value( 'page', 'pixel-trackers-manager' ) );
 
         echo '<div class="wrap ptm-wrap">';
         echo '<header class="ptm-head"><div class="ptm-brand"><img class="ptm-brand-mark" src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/logo-mark.svg' ) . '" alt=""><div><h1>Pixel Trackers Manager <span class="ptm-version">' . esc_html( self::VERSION ) . '</span></h1><p><strong>' . esc_html( get_bloginfo( 'name' ) ) . '</strong> — audit de confidentialité et assistant de documentation</p></div></div></header>';
@@ -5181,7 +5243,7 @@ final class Pixel_Trackers_Manager_Plugin {
     private function render_setup_tab() {
         $state = $this->onboarding_state();
         $settings = $this->settings();
-        $requested_step = isset( $_GET['ptm_setup_step'] ) ? sanitize_key( wp_unslash( $_GET['ptm_setup_step'] ) ) : '';
+        $requested_step = sanitize_key( $this->query_value( 'ptm_setup_step' ) );
         $step = $requested_step ? $requested_step : ( ! empty( $state['step'] ) ? sanitize_key( $state['step'] ) : 'welcome' );
         if ( 'completed' === $state['status'] && ! $requested_step ) { $step = 'welcome'; }
         if ( ! in_array( $step, array( 'welcome', 'pages', 'consent', 'summary' ), true ) ) { $step = 'welcome'; }
@@ -5318,7 +5380,13 @@ final class Pixel_Trackers_Manager_Plugin {
         echo '<div class="ptm-dashboard">';
         echo '<div class="ptm-alert-legend" aria-label="Niveaux d’alerte"><span class="is-problem">🔴 <strong>Problème constaté</strong> — preuve technique</span><span class="is-verify">🟠 <strong>À vérifier</strong> — contexte manquant</span><span class="is-advice">🔵 <strong>Conseil</strong> — bonne pratique, sans effet sur le score</span></div>';
         echo '<div class="ptm-grid ptm-kpis">';
-        echo '<a class="ptm-kpi ptm-kpi-score ptm-clickable-card" href="' . esc_url( admin_url( 'admin.php?page=pixel-trackers-manager-privacy#ptm-coverage-list' ) ) . '"><div class="ptm-score-ring" style="--ptm-score:' . esc_attr( null === $score ? 0 : $score ) . '"><span>' . ( null === $score ? '—' : esc_html( $score ) . '%' ) . '</span></div><div><span>Indicateur</span><strong>Couverture documentaire</strong><small>' . ( null === $score ? 'Contrôle de page à lancer' : ( isset($page_audit['satisfied_total'],$page_audit['applicable_total']) ? $page_audit['satisfied_total'].' / '.$page_audit['applicable_total'].' éléments applicables documentés' : 'Aide technique, pas un avis juridique' ) ) . '</small></div><span class="dashicons dashicons-arrow-right-alt2 ptm-card-arrow" aria-hidden="true"></span></a>';
+        $coverage_note = 'Contrôle de page à lancer';
+        if ( null !== $score ) {
+            $coverage_note = isset( $page_audit['satisfied_total'], $page_audit['applicable_total'] )
+                ? absint( $page_audit['satisfied_total'] ) . ' / ' . absint( $page_audit['applicable_total'] ) . ' éléments applicables documentés'
+                : 'Aide technique, pas un avis juridique';
+        }
+        echo '<a class="ptm-kpi ptm-kpi-score ptm-clickable-card" href="' . esc_url( admin_url( 'admin.php?page=pixel-trackers-manager-privacy#ptm-coverage-list' ) ) . '"><div class="ptm-score-ring" style="--ptm-score:' . esc_attr( null === $score ? 0 : $score ) . '"><span>' . ( null === $score ? '—' : esc_html( $score ) . '%' ) . '</span></div><div><span>Indicateur</span><strong>Couverture documentaire</strong><small>' . esc_html( $coverage_note ) . '</small></div><span class="dashicons dashicons-arrow-right-alt2 ptm-card-arrow" aria-hidden="true"></span></a>';
         $this->kpi( 'Traceurs actifs', $active, 'suivis techniquement confirmés', 'visibility', $active > 0 ? 'warn' : 'good', admin_url( 'admin.php?page=pixel-trackers-manager-findings' ) );
         $this->kpi( 'Actions à exécuter', count( $actions ), count( $actions ) ? 'à examiner' : 'aucun manque détecté', 'clipboard', count( $actions ) ? 'warn' : 'good', admin_url( 'admin.php?page=pixel-trackers-manager-privacy#ptm-coverage-list' ) );
         $this->kpi( 'Dernière analyse', $last_scan, ! empty( $coverage['processed'] ) ? (int) $coverage['processed'] . ' page(s) traitée(s)' : ( ! empty( $coverage['scanned'] ) ? (int) $coverage['scanned'] . ' page(s) analysée(s)' : 'aucune analyse enregistrée' ), 'calendar-alt', 'good', admin_url( 'admin.php?page=pixel-trackers-manager#ptm-scan-card' ) );
@@ -5417,7 +5485,7 @@ final class Pixel_Trackers_Manager_Plugin {
                 elseif ( 'blocked' === $state ) { $badge = '<span class="ptm-badge good">Bloqué avant choix</span>'; }
                 else { $badge = '<span class="ptm-badge warn">À vérifier</span>'; }
                 $proof = ! empty( $finding['source'] ) ? $finding['source'] : ( ! empty( $finding['observed_html'] ) ? 'Trace repérée dans le code affiché' : 'Source technique détectée' );
-                echo '<tr><td><strong>' . esc_html( $finding['label'] ) . '</strong><small>' . esc_html( isset( $finding['category'] ) ? $finding['category'] : '' ) . '</small></td><td>' . $badge . '</td><td>' . esc_html( $proof ) . '</td><td><a class="button button-small" href="' . esc_url( admin_url( 'admin.php?page=pixel-trackers-manager-findings' ) ) . '">Examiner</a></td></tr>';
+                echo '<tr><td><strong>' . esc_html( $finding['label'] ) . '</strong><small>' . esc_html( isset( $finding['category'] ) ? $finding['category'] : '' ) . '</small></td><td>' . wp_kses_post( $badge ) . '</td><td>' . esc_html( $proof ) . '</td><td><a class="button button-small" href="' . esc_url( admin_url( 'admin.php?page=pixel-trackers-manager-findings' ) ) . '">Examiner</a></td></tr>';
             }
             echo '</tbody></table></div>';
         }
@@ -5616,14 +5684,17 @@ final class Pixel_Trackers_Manager_Plugin {
                 $status_label=array('found'=>'Repéré','partial'=>'Partiellement repéré','verify'=>'À vérifier','missing'=>'Non repéré');
                 $where=!empty($item['where'])?$item['where']:'';
                 $is_actionable = in_array( $status, array( 'partial','verify','missing' ), true );
-                $row_tag = $is_actionable ? 'a' : 'article';
-                $row_href = $is_actionable ? ' href="' . esc_url( $this->assistant_url( $this->assistant_step_for_topic( $id ), $id ) ) . '"' : '';
-                echo '<'.$row_tag.' class="ptm-coverage-row '.($is_actionable?'ptm-coverage-link ':'').'is-'.esc_attr($status).'"'.$row_href.' data-status="'.esc_attr($status).'" data-label="'.esc_attr($this->normalize_text($item['label'])).'" data-source="'.esc_attr($this->normalize_text($where)).'"><div><strong>'.esc_html($item['label']).'</strong>';
+                if ( $is_actionable ) {
+                    echo '<a class="ptm-coverage-row ptm-coverage-link is-' . esc_attr( $status ) . '" href="' . esc_url( $this->assistant_url( $this->assistant_step_for_topic( $id ), $id ) ) . '" data-status="' . esc_attr( $status ) . '" data-label="' . esc_attr( $this->normalize_text( $item['label'] ) ) . '" data-source="' . esc_attr( $this->normalize_text( $where ) ) . '"><div><strong>' . esc_html( $item['label'] ) . '</strong>';
+                } else {
+                    echo '<article class="ptm-coverage-row is-' . esc_attr( $status ) . '" data-status="' . esc_attr( $status ) . '" data-label="' . esc_attr( $this->normalize_text( $item['label'] ) ) . '" data-source="' . esc_attr( $this->normalize_text( $where ) ) . '"><div><strong>' . esc_html( $item['label'] ) . '</strong>';
+                }
                 if($where){echo '<small>Repéré dans : '.esc_html($where).'</small>';}
                 elseif('partial'===$status){echo '<small>Information enregistrée dans l’assistant mais pas encore repérée dans les pages analysées. Cliquez pour la compléter.</small>';}
                 elseif('verify'===$status){echo '<small>Ce point dépend de votre situation : cliquez pour le vérifier.</small>';}
                 elseif('missing'===$status){echo '<small>Cliquez pour ouvrir directement la partie correspondante de l’assistant.</small>';}
-                echo '</div><span class="ptm-doc-status '.esc_attr($status).'">'.esc_html($status_label[$status]).($is_actionable?' →':'').'</span></'.$row_tag.'>';
+                echo '</div><span class="ptm-doc-status ' . esc_attr( $status ) . '">' . esc_html( $status_label[ $status ] ) . ( $is_actionable ? ' →' : '' ) . '</span>';
+                if ( $is_actionable ) { echo '</a>'; } else { echo '</article>'; }
             }
             echo '</div></details>';
         }
@@ -5765,8 +5836,17 @@ final class Pixel_Trackers_Manager_Plugin {
     }
 
     private function kpi( $label, $value, $note, $icon = 'chart-bar', $tone = 'neutral', $href = '' ) {
-        $tag = $href ? 'a' : 'section';
-        echo '<' . $tag . ' class="ptm-kpi ptm-tone-' . esc_attr( $tone ) . ( $href ? ' ptm-clickable-card' : '' ) . '"' . ( $href ? ' href="' . esc_url( $href ) . '"' : '' ) . '><span class="ptm-kpi-icon dashicons dashicons-' . esc_attr( $icon ) . '"></span><div><span>' . esc_html( $label ) . '</span><strong>' . esc_html( (string) $value ) . '</strong><small>' . esc_html( $note ) . '</small></div>' . ( $href ? '<span class="dashicons dashicons-arrow-right-alt2 ptm-card-arrow" aria-hidden="true"></span>' : '' ) . '</' . $tag . '>';
+        if ( $href ) {
+            echo '<a class="ptm-kpi ptm-tone-' . esc_attr( $tone ) . ' ptm-clickable-card" href="' . esc_url( $href ) . '">';
+        } else {
+            echo '<section class="ptm-kpi ptm-tone-' . esc_attr( $tone ) . '">';
+        }
+        echo '<span class="ptm-kpi-icon dashicons dashicons-' . esc_attr( $icon ) . '"></span><div><span>' . esc_html( $label ) . '</span><strong>' . esc_html( (string) $value ) . '</strong><small>' . esc_html( $note ) . '</small></div>';
+        if ( $href ) {
+            echo '<span class="dashicons dashicons-arrow-right-alt2 ptm-card-arrow" aria-hidden="true"></span></a>';
+        } else {
+            echo '</section>';
+        }
     }
 }
 

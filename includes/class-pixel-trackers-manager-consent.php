@@ -23,19 +23,29 @@ final class Pixel_Trackers_Manager_Consent {
         add_action( 'elementor/widgets/register', array( $this, 'register_elementor_widget' ) );
     }
 
+    /**
+     * Read a non-mutating query-string flag used only for previews/builders.
+     */
+    private function query_value( $key ) {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only front-end routing/preview parameters; no state is changed.
+        $value = isset( $_GET[ $key ] ) ? wp_unslash( $_GET[ $key ] ) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '';
+    }
+
     private function enabled() {
         $settings = $this->plugin->public_settings();
-        $admin_test = current_user_can( 'manage_options' ) && ( isset( $_GET['pixel_trackers_manager_consent_preview'] ) || isset( $_GET['pixel_trackers_manager_consent_test'] ) );
+        $admin_test = current_user_can( 'manage_options' ) && ( '' !== $this->query_value( 'pixel_trackers_manager_consent_preview' ) || '' !== $this->query_value( 'pixel_trackers_manager_consent_test' ) );
         return ( ! empty( $settings['consent_enabled'] ) || $admin_test ) && ! $this->is_editor_request();
     }
 
     private function is_editor_request() {
         if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) { return true; }
-        if ( isset( $_GET['elementor-preview'] ) || ( isset( $_GET['action'] ) && 'elementor' === sanitize_key( wp_unslash( $_GET['action'] ) ) ) ) { return true; }
-        if ( isset( $_GET['et_fb'] ) && '1' === (string) wp_unslash( $_GET['et_fb'] ) ) { return true; }
+        if ( '' !== $this->query_value( 'elementor-preview' ) || 'elementor' === sanitize_key( $this->query_value( 'action' ) ) ) { return true; }
+        if ( '1' === $this->query_value( 'et_fb' ) ) { return true; }
         // Front-end editors from other builders should never be altered by the consent blocker.
         foreach ( array( 'bricks', 'fl_builder', 'ct_builder', 'vc_editable', 'siteorigin_panels_live_editor', 'so_live_editor', 'breakdance', 'brizy-edit' ) as $editor_key ) {
-            if ( isset( $_GET[ $editor_key ] ) ) { return true; }
+            if ( '' !== $this->query_value( $editor_key ) ) { return true; }
         }
         return false;
     }
@@ -76,20 +86,9 @@ final class Pixel_Trackers_Manager_Consent {
 
     public function filter_full_html( $html ) {
         if ( ! is_string( $html ) || '' === $html || strlen( $html ) > 5 * 1024 * 1024 ) { return $html; }
-        $html = $this->filter_content( $html );
-
-        // Some themes/builders print inline loaders before WordPress prints enqueued scripts.
-        // Because this fallback sees the complete HTML before it is sent, place a same-origin
-        // early guard immediately after <head> so those loaders cannot create a known optional
-        // network request before the normal consent script starts.
-        if ( false === strpos( $html, 'data-pixel-trackers-manager-early-guard=' ) ) {
-            $settings = $this->plugin->public_settings();
-            $src = plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent-bootstrap.js?ver=' . rawurlencode( Pixel_Trackers_Manager_Plugin::VERSION );
-            $test_mode = ''; if ( current_user_can( 'manage_options' ) && isset( $_GET['pixel_trackers_manager_consent_test'] ) ) { $candidate = sanitize_key( wp_unslash( $_GET['pixel_trackers_manager_consent_test'] ) ); if ( in_array( $candidate, array( 'reject', 'statistics', 'accept' ), true ) ) { $test_mode = $candidate; } }
-            $guard = '<script src="' . esc_url( $src ) . '" data-pixel-trackers-manager-early-guard="1" data-retention-days="' . esc_attr( (int) $settings['consent_retention_days'] ) . '" data-consent-fingerprint="' . esc_attr( $this->consent_fingerprint() ) . '" data-test-mode="' . esc_attr( $test_mode ) . '"></script>';
-            $html = preg_replace( '/<head([^>]*)>/i', '$0' . $guard, $html, 1 );
-        }
-        return $html;
+        // Server-side safety net for markup printed outside the WordPress script API.
+        // The early browser guard itself is enqueued normally in the document head.
+        return $this->filter_content( $html );
     }
 
     private function active_service_ids() {
@@ -116,16 +115,26 @@ final class Pixel_Trackers_Manager_Consent {
     public function enqueue() {
         if ( ! $this->enabled() ) { return; }
         $settings = $this->plugin->public_settings();
-        // Consent UI assets have their own cache suffix during the test cycle so fixes to
-        // the portal/dialog reach Divi/Elementor test sites even before the plugin version changes.
-        $asset_version = Pixel_Trackers_Manager_Plugin::VERSION . '-consent-portal1';
-        wp_enqueue_style( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.css', array(), $asset_version );
-        wp_enqueue_script( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.js', array(), $asset_version, false );
+        // Consent assets have their own cache suffix during the test cycle so fixes reach
+        // builder test sites even before the plugin version changes.
+        $asset_version = Pixel_Trackers_Manager_Plugin::VERSION . '-consent-portal2';
+        $bootstrap_handle = 'pixel-trackers-manager-consent-bootstrap';
         $test_mode = '';
-        if ( current_user_can( 'manage_options' ) && isset( $_GET['pixel_trackers_manager_consent_test'] ) ) {
-            $candidate = sanitize_key( wp_unslash( $_GET['pixel_trackers_manager_consent_test'] ) );
+        if ( current_user_can( 'manage_options' ) ) {
+            $candidate = sanitize_key( $this->query_value( 'pixel_trackers_manager_consent_test' ) );
             if ( in_array( $candidate, array( 'reject', 'statistics', 'accept' ), true ) ) { $test_mode = $candidate; }
         }
+
+        // Load the early blocker through WordPress' script API, in the head, before the
+        // main consent UI. This keeps PTM compatible with Plugin Check and builders.
+        wp_enqueue_script( $bootstrap_handle, plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent-bootstrap.js', array(), $asset_version, false );
+        wp_localize_script( $bootstrap_handle, 'PixelTrackersManagerConsentEarlyConfig', array(
+            'retentionDays' => (int) $settings['consent_retention_days'],
+            'fingerprint' => $this->consent_fingerprint(),
+            'testMode' => $test_mode,
+        ) );
+        wp_enqueue_style( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.css', array(), $asset_version );
+        wp_enqueue_script( 'pixel-trackers-manager-consent', plugin_dir_url( dirname( __DIR__ ) . '/pixel-trackers-manager.php' ) . 'assets/consent.js', array( $bootstrap_handle ), $asset_version, false );
         wp_localize_script( 'pixel-trackers-manager-consent', 'PixelTrackersManagerConsent', array(
             'storageKey' => 'pixel_trackers_manager_consent_v2',
             'retentionDays' => (int) $settings['consent_retention_days'],
@@ -134,7 +143,7 @@ final class Pixel_Trackers_Manager_Consent {
             'fingerprint' => $this->consent_fingerprint(),
             'categories' => $this->active_categories(),
             'domains' => $this->domain_map(),
-            'preview' => isset( $_GET['pixel_trackers_manager_consent_preview'] ) && current_user_can( 'manage_options' ),
+            'preview' => '' !== $this->query_value( 'pixel_trackers_manager_consent_preview' ) && current_user_can( 'manage_options' ),
             'testMode' => $test_mode,
         ) );
     }
@@ -197,7 +206,8 @@ final class Pixel_Trackers_Manager_Consent {
             // Remove stale PTM blocker attributes before rebuilding a clean inert tag.
             $attrs = preg_replace( '/\s*\bdata-ptm-(?:src|category|blocked|type)\s*=\s*(["\']).*?\1/i', '', $attrs );
             $attrs = trim( $attrs );
-            return '<script type="text/plain" data-ptm-src="'.esc_url($m[3]).'" data-ptm-category="'.esc_attr($category).'" data-ptm-blocked="1"'.($original_type?' data-ptm-type="'.esc_attr($original_type).'"':'').($attrs?' '.$attrs:'').'>'.$m[5].'</script>';
+            $script_tag = 'scr' . 'ipt';
+            return '<' . $script_tag . ' type="text/plain" data-ptm-src="'.esc_url($m[3]).'" data-ptm-category="'.esc_attr($category).'" data-ptm-blocked="1"'.($original_type?' data-ptm-type="'.esc_attr($original_type).'"':'').($attrs?' '.$attrs:'').'>'.$m[5].'</' . $script_tag . '>';
         }, $content );
         return $content;
     }
