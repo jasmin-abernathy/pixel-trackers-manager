@@ -9,10 +9,18 @@
 *.yaml text eol=lf
 *.svg text eol=lf
 
-# Keep development-only GitHub files out of git archive builds
+# Keep development-only files out of git archive builds.
 .github export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
 .editorconfig export-ignore
+.distignore export-ignore
+README.md export-ignore
+README.fr.md export-ignore
+CODE_OF_CONDUCT.md export-ignore
+CODE_OF_CONDUCT.fr.md export-ignore
 CONTRIBUTING.md export-ignore
+CONTRIBUTING.fr.md export-ignore
 SECURITY.md export-ignore
+SECURITY.fr.md export-ignore
+docs export-ignore
