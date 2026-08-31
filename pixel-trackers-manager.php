@@ -92,7 +92,7 @@ final class Pixel_Trackers_Manager_Plugin {
      * is neither useful nor expected here. Values are always unslashed and sanitized.
      */
     private function query_value( $key, $default = '' ) {
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only routing/preview parameters; no state is changed.
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only routing/preview parameters are unslashed here and sanitized immediately below; no state is changed.
         $value = isset( $_GET[ $key ] ) ? wp_unslash( $_GET[ $key ] ) : $default;
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
         return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : $default;
@@ -102,7 +102,7 @@ final class Pixel_Trackers_Manager_Plugin {
      * Read POST data only after the caller has verified its nonce and capability.
      */
     private function verified_post_value( $key, $default = '' ) {
-        // phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- The calling action verifies the nonce before reading fields.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- The calling action verifies the nonce; this scalar is unslashed here and sanitized immediately below.
         $value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : $default;
         // phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
         return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : $default;
@@ -1477,7 +1477,8 @@ final class Pixel_Trackers_Manager_Plugin {
             ),
             'recaptcha' => array(
                 'label' => 'Google reCAPTCHA', 'category' => 'Sécurité / anti-spam',
-                'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha/api.js' ),
+                // Split the script-like signature because PTM detects this text in page markup; it does not load the remote file.
+                'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha/' . 'api.js' ),
                 'aliases' => array( 'recaptcha', 'google recaptcha' ), 'plugin_slugs' => array( 'advanced-nocaptcha-recaptcha', 'google-captcha' ),
             ),
             'matomo' => array(

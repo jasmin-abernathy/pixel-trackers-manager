@@ -27,7 +27,7 @@ final class Pixel_Trackers_Manager_Consent {
      * Read a non-mutating query-string flag used only for previews/builders.
      */
     private function query_value( $key ) {
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only front-end routing/preview parameters; no state is changed.
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only routing/preview parameters are unslashed here and sanitized immediately below; no state is changed.
         $value = isset( $_GET[ $key ] ) ? wp_unslash( $_GET[ $key ] ) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
         return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '';
