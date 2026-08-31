@@ -2,100 +2,132 @@
 
 [Lire en français](README.fr.md)
 
-Pixel Trackers Manager (PTM) is a local-first WordPress privacy audit and documentation assistant developed by **Le Potager du Web**.
+Pixel Trackers Manager (PTM) is a **local-first** WordPress privacy audit, documentation and consent assistant developed by **Le Potager du Web**.
 
-It helps site administrators understand what their WordPress site actually does: detect trackers and third-party services, review legal pages, document relevant data practices, and optionally manage visitor consent.
+It helps administrators understand what their site actually does: identify trackers and third-party services, review legal pages, document relevant data practices and optionally manage visitor consent.
 
-> **Current status:** test build `0.0.2-test4`. PTM is not a legal certification tool and does not replace advice adapted to the organisation's real activities.
->
-> **Repository sync — 30 August 2026:** `0.0.2-test4` remains the reference build. No later product decision was found that warrants a version bump; the current documentation and test matrix now explicitly include WordPress 7.1 validation before WordPress.org submission.
+> **Current status:** development build `0.0.2-test4`. PTM is not a legal certification tool and does not replace advice adapted to the organisation's actual activities.
 
 ## Core principles
 
 - **Observe first, ask second.** PTM reuses information already available in WordPress before asking the administrator to enter it again.
-- **Local by default.** Audit results, settings and questionnaire answers stay in WordPress unless the administrator explicitly starts an external lookup.
+- **Local by default.** Audit results, settings and questionnaire answers stay in WordPress unless the administrator explicitly starts a documented external lookup.
 - **No silent legal publishing.** PTM can prepare drafts and proposed updates, but important public changes require an explicit administrator action.
-- **No dark patterns.** If the native consent interface is enabled, Accept and Reject must have equal visual weight.
-- **Builder-independent privacy engine.** The consent layer works at WordPress level; Elementor, Divi and other builders are compatibility layers, not dependencies.
-- **Conservative writes.** When PTM cannot safely understand a builder's internal structure, it falls back to a shortcode/manual workflow rather than rewriting unknown data.
+- **No dark patterns.** If the native consent interface is enabled, Accept and Reject keep equal visual weight.
+- **Builder-independent privacy engine.** Consent works at WordPress level; Elementor, Divi and other builders are compatibility layers rather than dependencies.
+- **Conservative writes.** When PTM cannot safely understand a builder's internal structure, it falls back to a shortcode/manual workflow instead of rewriting unknown data.
 
-## What PTM currently covers
+## Current coverage
 
 ### Site analysis
 
 - progressive full-site scan;
 - tracker and third-party service detection;
-- distinction between active evidence, an available integration, and something that still needs human verification;
-- failed URLs do not stop the rest of the scan;
+- distinction between active evidence, an available integration and something that still needs human verification;
+- failed URLs do not stop the remaining scan;
 - WordPress drafts/private/pending/scheduled pages can be distinguished from genuine public 404 errors.
 
 ### Legal documentation
 
-- Legal Notice, Privacy Policy, and Cookies / Consent reference pages;
+- Legal Notice, Privacy Policy and Cookies / Consent reference pages;
 - guided GDPR assistant in a dedicated tab;
 - clickable documentation gaps that open the relevant assistant section;
-- separation between site publisher, data controller, public contact, privacy-rights contact, and an actually designated DPO;
+- separation between site publisher, data controller, public contact, privacy-rights contact and an actually designated DPO;
 - public legal shortcodes and draft creation;
 - explicit update workflow instead of silent publication.
 
 ### Consent
 
-- optional native consent bar or centred panel;
+- optional native bar or centred panel;
+- interface mounted globally under `<body>`, independently from Divi/Elementor;
 - deny-by-default behaviour for recognised optional services once enabled;
 - equal visual treatment for Accept all and Reject all;
-- persistent “Manage my choices” control;
-- administrator testing mode and compatibility work for dynamic builder modules.
+- persistent **Manage my choices** control;
+- lightweight public API for theme/builder integrations;
+- administrator test mode and conservative compatibility work for dynamic builder modules.
 
 ### WordPress ecosystem awareness
 
-PTM can use or inspect information from supported WordPress components where it is safe to do so, including WordPress/Gutenberg, Elementor, Divi, selected form plugins, backup plugins, and known consent or analytics integrations.
+PTM can safely use or inspect information from WordPress/Gutenberg, Elementor, Divi, selected form plugins, backup plugins and known consent or analytics integrations.
 
-The project also aims to cover practices that happen **outside WordPress** when the website alone cannot reveal them, for example mass emails sent from Gmail/Outlook, WhatsApp contacts, booking tools such as Calendly/Koalendar, external forms, HelloAsso, payment platforms, spreadsheets, or cloud storage.
+The project also covers practices that happen **outside WordPress** when the website alone cannot reveal them, such as mass emails, messaging, external booking/forms, HelloAsso, payments, spreadsheets or cloud storage.
+
+## Automatic installable ZIP
+
+The repository now builds a clean installable archive automatically on every push to `master`.
+
+In GitHub:
+
+1. open **Actions**;
+2. open the latest **PTM quality and distribution** run;
+3. download the `pixel-trackers-manager-VERSION` artifact.
+
+The ZIP is built with the official WP-CLI `wp dist-archive` command and `.distignore`. Development-only material such as GitHub workflows, internal documentation, contribution files and temporary files is excluded.
+
+The workflow also checks:
+
+- consistency between the plugin `Version` header, runtime constant and `Stable tag`;
+- PHP syntax on PHP 7.4, 8.3 and 8.4;
+- JavaScript syntax;
+- WordPress.org `readme.txt` metadata and size;
+- the five-tag WordPress.org limit;
+- the official **WordPress Plugin Check** action;
+- ZIP integrity and SHA-256 digest.
 
 ## Test installation
 
-1. Place the repository in `wp-content/plugins/pixel-trackers-manager/`, or build a ZIP from the plugin directory.
+1. Download the ZIP generated by GitHub Actions or place the repository in `wp-content/plugins/pixel-trackers-manager/`.
 2. Activate **Pixel Trackers Manager** in WordPress.
 3. Open PTM for the first time to launch the guided setup.
 
-Current test requirements:
+Current requirements:
 
 - WordPress 6.5+
 - PHP 7.4+
 
-The plugin metadata currently targets WordPress 7.1. Before a WordPress.org candidate is published, the dedicated WordPress 7.1 section in the current test checklist must pass on the selected build.
+The metadata currently targets WordPress 7.1. Before a build is submitted to WordPress.org, the dedicated WordPress 7.1 test matrix must actually pass on that exact build.
+
+## Versioning and WordPress.org
+
+`0.0.2-test4` is a **GitHub development version**. A real WordPress.org release will use a numeric version such as `0.0.2` or `0.1.0`, identical in the PHP header, runtime constant and `Stable tag`.
+
+The WordPress.org SVN repository will be treated as a release repository rather than a mirror of every GitHub commit.
+
+See [`docs/WORDPRESS-ORG-RELEASE.md`](docs/WORDPRESS-ORG-RELEASE.md) for the complete procedure.
 
 ## Documentation
 
 - [`README.fr.md`](README.fr.md) — French project overview.
-- [`docs/STATUS-2026-08-30.md`](docs/STATUS-2026-08-30.md) — latest repository/product synchronisation checkpoint.
+- [`docs/WORDPRESS-ORG-RELEASE.md`](docs/WORDPRESS-ORG-RELEASE.md) — WordPress.org preparation and release process.
+- [`docs/CONSENT-INTEGRATION.md`](docs/CONSENT-INTEGRATION.md) — consent UI integration with page builders.
+- [`docs/STATUS-2026-08-30.md`](docs/STATUS-2026-08-30.md) — latest consolidated product checkpoint.
 - [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md) — English user guide.
 - [`docs/USER-GUIDE.fr.md`](docs/USER-GUIDE.fr.md) — French user guide.
-- `docs/TESTS-0.0.2-test4.md` — current validation checklist, including WordPress 7.1.
+- `docs/TESTS-0.0.2-test4.md` — current validation checklist.
 - `docs/CAHIER-DES-CHARGES.md` — internal product specification and roadmap (French).
-- `changelog.txt` — detailed test-build history.
+- `changelog.txt` — detailed development-build history.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution guide.
 - [`SECURITY.md`](SECURITY.md) — vulnerability reporting policy.
 
 ## Development workflow
 
-The repository is currently used for active pre-release development. Keep the stable working branch installable and use a development or feature branch for unfinished changes when practical.
+The repository is used for active pre-release development. The reference branch should remain installable; unfinished changes should use feature branches when practical.
 
-Before a release candidate, PTM should at minimum pass:
+Before selecting a release candidate, PTM should at minimum pass:
 
-- PHP syntax checks;
-- JavaScript syntax checks;
+- automated GitHub checks;
 - WordPress activation/deactivation tests;
 - the current manual validation checklist;
-- explicit WordPress 7.1 validation while the metadata claims `Tested up to: 7.1`;
-- WordPress.org-specific checks when a build is selected for directory submission.
+- actual WordPress 7.1 validation;
+- Gutenberg, Elementor and Divi tests;
+- installation of the **exact ZIP** generated by GitHub Actions on a clean WordPress site.
 
 ## Reporting issues
 
-Please use the GitHub issue templates for reproducible bugs and feature proposals. Do not include passwords, API keys, personal data, or client-site exports in public reports.
+Use the GitHub issue templates for reproducible bugs and feature proposals. Never include passwords, API keys, personal data or client-site exports in public reports.
 
-For a vulnerability that could expose data or compromise a site, follow [`SECURITY.md`](SECURITY.md) rather than opening a public issue with exploitation details.
+For a vulnerability that could expose data or compromise a site, follow [`SECURITY.md`](SECURITY.md) instead of publishing exploitation details in an issue.
 
 ## License
 
-See [`LICENSE`](LICENSE). The repository licensing and WordPress.org release metadata will be checked again before the first directory submission.
+See [`LICENSE`](LICENSE). PTM is distributed under GPL v2 or later.
