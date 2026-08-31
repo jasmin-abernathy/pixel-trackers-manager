@@ -1477,8 +1477,7 @@ final class Pixel_Trackers_Manager_Plugin {
             ),
             'recaptcha' => array(
                 'label' => 'Google reCAPTCHA', 'category' => 'Sécurité / anti-spam',
-                // Split the script-like signature because PTM detects this text in page markup; it does not load the remote file.
-                'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha/' . 'api.js' ),
+                'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha' ),
                 'aliases' => array( 'recaptcha', 'google recaptcha' ), 'plugin_slugs' => array( 'advanced-nocaptcha-recaptcha', 'google-captcha' ),
             ),
             'matomo' => array(
