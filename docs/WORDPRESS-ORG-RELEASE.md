@@ -1,0 +1,132 @@
+# Pixel Trackers Manager — procédure WordPress.org
+
+Ce document sépare volontairement le développement GitHub de la distribution WordPress.org.
+
+## 1. Principe
+
+- **GitHub** = dépôt de développement, documentation, issues, tests et CI.
+- **ZIP GitHub Actions** = archive installable produite automatiquement à partir des seuls fichiers de distribution.
+- **SVN WordPress.org** = dépôt de publication, à alimenter uniquement avec des versions prêtes à être distribuées.
+
+WordPress.org ne doit pas servir de dépôt de développement quotidien.
+
+## 2. Versionnement
+
+Pendant le développement GitHub, une version de test telle que `0.0.2-test4` peut rester utilisée.
+
+Avant une vraie publication WordPress.org :
+
+1. choisir une version numérique, par exemple `0.0.2` ou `0.1.0` ;
+2. mettre exactement la même version dans :
+   - le header `Version:` de `pixel-trackers-manager.php` ;
+   - `Pixel_Trackers_Manager_Plugin::VERSION` ;
+   - `Stable tag:` de `readme.txt` ;
+3. utiliser cette version numérique pour le tag SVN WordPress.org.
+
+Les tags SVN WordPress.org doivent être des numéros de version composés de chiffres et de points. Ne pas publier un tag SVN `0.0.2-test4`.
+
+## 3. Tested up to
+
+`Tested up to` doit indiquer une version de WordPress réellement testée. Ne pas annoncer une version supérieure à la version stable courante, sauf release candidate officiellement disponible.
+
+Pour PTM, WordPress 7.1 est la version stable courante au moment de cette procédure. La checklist dédiée doit être réellement exécutée avant de considérer `Tested up to: 7.1` comme validé pour une publication.
+
+## 4. Contrôles automatiques GitHub
+
+Le workflow `.github/workflows/quality-and-build.yml` exécute automatiquement :
+
+- cohérence `Version` / constante runtime / `Stable tag` ;
+- limite de cinq tags WordPress.org ;
+- taille du `readme.txt` ;
+- lint PHP sur PHP 7.4, 8.3 et 8.4 ;
+- contrôle de syntaxe JavaScript ;
+- Plugin Check officiel WordPress ;
+- génération de l'archive installable avec `wp dist-archive` et `.distignore` ;
+- test de l'intégrité du ZIP ;
+- contrôle qu'aucun fichier réservé au développement ne fuit dans le ZIP ;
+- calcul SHA-256 de l'archive.
+
+Le ZIP est généré automatiquement à chaque push sur `master` et lors d'un lancement manuel du workflow. Il est disponible dans les **Artifacts** de la dernière exécution GitHub Actions.
+
+## 5. Contenu de l'archive
+
+Le ZIP distribué doit contenir une seule racine :
+
+`pixel-trackers-manager/`
+
+Il contient notamment :
+
+- `pixel-trackers-manager.php` ;
+- `readme.txt` ;
+- `LICENSE` ;
+- `changelog.txt` ;
+- `includes/` ;
+- `assets/` utilisés par le plugin à l'exécution.
+
+Il ne contient pas :
+
+- `.github/` ;
+- `docs/` ;
+- README GitHub ;
+- fichiers de contribution / sécurité / code de conduite ;
+- `.git*`, `.editorconfig`, `.distignore` ;
+- archives ou fichiers temporaires.
+
+## 6. Readme WordPress.org
+
+Le `readme.txt` doit :
+
+- rester concis ;
+- utiliser au maximum cinq tags ;
+- conserver un `Stable tag` identique à la version publiée ;
+- documenter clairement les services externes ;
+- ne pas promettre ou garantir une conformité juridique ;
+- conserver uniquement le changelog de la version courante, l'historique détaillé restant dans `changelog.txt`.
+
+## 7. Service externe PTM
+
+La recherche d'entreprise française est facultative et déclenchée uniquement par une action explicite d'un administrateur.
+
+Le `readme.txt` doit continuer à préciser :
+
+- quelles données sont envoyées : terme de recherche (nom, SIREN ou SIRET) ;
+- quand elles sont envoyées : après un clic explicite ;
+- à qui : API Recherche d'entreprises / DINUM ;
+- qu'aucun résultat de scan PTM n'est envoyé avec cette requête.
+
+## 8. Avant soumission initiale
+
+À faire manuellement en plus de la CI :
+
+- [ ] exécuter la checklist P0 complète ;
+- [ ] tester réellement WordPress 7.1 ;
+- [ ] tester Gutenberg ;
+- [ ] tester Elementor ;
+- [ ] tester Divi ;
+- [ ] tester la bannière et Gérer mes choix sur mobile ;
+- [ ] tester installation propre, mise à jour et désactivation ;
+- [ ] tester avec `WP_DEBUG` actif ;
+- [ ] examiner toutes les erreurs et avertissements de Plugin Check ;
+- [ ] passer le `readme.txt` dans le validateur officiel WordPress.org ;
+- [ ] installer le ZIP exact généré par GitHub Actions sur un WordPress de test vierge.
+
+## 9. Après approbation WordPress.org
+
+WordPress.org fournit un dépôt SVN avec notamment :
+
+- `/trunk` pour le code courant ;
+- `/tags/VERSION` pour les versions publiées ;
+- `/assets` pour les icônes, bannières et captures de la fiche WordPress.org.
+
+Attention : le dossier runtime `assets/` du plugin n'est pas le même concept que le `/assets` situé à la racine du dépôt SVN WordPress.org.
+
+Pour publier :
+
+1. copier le contenu du ZIP propre dans `trunk/` sans dossier intermédiaire supplémentaire ;
+2. vérifier `trunk/readme.txt` ;
+3. committer le trunk prêt ;
+4. créer le tag avec `svn cp trunk tags/VERSION` ;
+5. committer le tag ;
+6. vérifier la fiche et le téléchargement sur WordPress.org.
+
+Ne pas envoyer tous les petits commits GitHub vers le SVN : le SVN WordPress.org est un dépôt de publication.
