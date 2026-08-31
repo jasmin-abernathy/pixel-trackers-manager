@@ -8,107 +8,107 @@ Stable tag: 0.0.2-test4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Audit local des traceurs, documentation de confidentialité et gestion facultative du consentement pour WordPress.
+Local privacy audits, legal documentation assistance, and optional consent management for WordPress.
 
 == Description ==
 
-Pixel Trackers Manager (PTM) aide les administrateurs WordPress à comprendre ce que leur site fait réellement avec des services tiers et des traceurs, à maintenir leurs pages légales et, s'ils le souhaitent, à gérer le consentement des visiteurs.
+Pixel Trackers Manager (PTM) helps WordPress administrators understand what their site actually does with trackers and third-party services, keep privacy-related documentation up to date, and optionally manage visitor consent.
 
-PTM est conçu local-first : les résultats d'analyse, réglages et réponses de l'assistant restent dans WordPress par défaut. Le plugin ne certifie pas juridiquement la conformité au RGPD et ne remplace pas une analyse adaptée à l'activité réelle de l'organisation.
+PTM is designed local-first: audit results, settings, and assistant answers stay in WordPress by default. The plugin does not certify GDPR compliance and does not replace legal advice adapted to an organisation's actual activities.
 
-Fonctions principales :
+Main features:
 
-* analyse standard ou complète des contenus publics ;
-* détection de traceurs, services tiers, contenus externes et outils de consentement connus ;
-* distinction entre preuve technique observée, intégration présente et élément restant à vérifier ;
-* progression du scan par petits lots : une page en erreur n'arrête pas les autres ;
-* assistant RGPD en langage courant, qui réutilise d'abord ce que WordPress permet déjà de déduire ;
-* couverture documentaire fondée uniquement sur les éléments réellement applicables ;
-* gestion des pages Mentions légales, Politique de confidentialité et Cookies / consentement ;
-* création en brouillon et mise à jour explicite, sans publication juridique silencieuse ;
-* compatibilité prudente avec Gutenberg, Elementor, Divi et plusieurs autres constructeurs ;
-* bannière de consentement native facultative, désactivée à l'installation ;
-* blocage protecteur des services facultatifs reconnus avant le choix lorsque la bannière PTM est activée ;
-* actions Tout accepter / Tout refuser de poids visuel équivalent ;
-* contrôle permanent Gérer mes choix, widget Elementor et shortcode universel ;
-* premiers contrôles de pratiques externes au site : e-mailing, messageries, réservation, formulaires externes, paiements et fichiers/listes.
+* standard or full analysis of public site content;
+* detection of known trackers, third-party services, external content, and consent tools;
+* distinction between observed technical evidence, an available integration, and something that still needs human verification;
+* progressive scans where one failing page does not stop the remaining analysis;
+* a guided privacy assistant that reuses information WordPress can already provide before asking questions;
+* documentation coverage based only on requirements that actually apply;
+* management of Legal Notice, Privacy Policy, and Cookies / Consent reference pages;
+* explicit draft creation and updates, without silently publishing legal content;
+* conservative compatibility with Gutenberg, Elementor, Divi, and several other page builders;
+* an optional native consent interface that is disabled after installation;
+* protective blocking of recognised optional services before the visitor's choice when PTM consent is enabled;
+* Accept all and Reject all actions with equal visual weight;
+* a persistent Manage my choices control, Elementor widget, and universal shortcode;
+* initial checks for practices outside WordPress, including email, messaging, booking tools, external forms, payments, and files/lists.
 
-= Consentement =
+= Consent =
 
-La bannière PTM fonctionne indépendamment du constructeur de pages. Elle est montée au niveau global de la page afin d'éviter les conflits de positionnement propres aux thèmes, Divi ou Elementor.
+The PTM consent interface is independent from the page builder. It is mounted globally on the page to avoid positioning and stacking conflicts caused by themes, Divi, or Elementor.
 
-Lorsque PTM gère le consentement :
+When PTM manages consent:
 
-* aucune catégorie facultative n'est précochée ;
-* fermer la bannière ne vaut pas acceptation ;
-* le choix peut être modifié avec Gérer mes choix ;
-* les services facultatifs reconnus restent bloqués avant le choix ;
-* le moteur réel est désactivé dans les éditeurs visuels des constructeurs.
+* no optional category is preselected;
+* closing the interface is not treated as consent;
+* visitors can change their choice through Manage my choices;
+* recognised optional services stay blocked before a choice;
+* the real blocking engine is disabled inside visual page-builder editors.
 
-Shortcodes publics : `[ptm_legal_notice]`, `[ptm_privacy_policy]`, `[ptm_cookies]`, `[ptm_services]`, `[ptm_rights]`, `[ptm_documents]` et `[ptm_consent_settings]`.
+Public shortcodes: `[ptm_legal_notice]`, `[ptm_privacy_policy]`, `[ptm_cookies]`, `[ptm_services]`, `[ptm_rights]`, `[ptm_documents]`, and `[ptm_consent_settings]`.
 
-= Constructeurs de pages =
+= Page builders =
 
-Gutenberg / WordPress : lecture et mise à jour via les API WordPress et shortcodes.
+WordPress / Gutenberg: PTM uses WordPress APIs and public shortcodes for supported content.
 
-Elementor : lecture locale des widgets connus, création explicite de pages juridiques prises en charge et widget Gérer mes choix.
+Elementor: PTM can inspect known local widget content, explicitly create supported legal pages, and provides a Manage my choices widget.
 
-Divi : lecture prudente des contenus connus. PTM privilégie une structure native lorsqu'elle est clairement reconnue et un repli par shortcode lorsqu'une réécriture sûre n'est pas garantie.
+Divi: PTM reads recognised content conservatively. It prefers a native structure only when that structure is clearly understood and falls back to a shortcode when a safe rewrite cannot be guaranteed.
 
-Autres constructeurs : PTM reconnaît de façon conservatrice plusieurs signatures courantes et préfère toujours un repli manuel à une modification hasardeuse d'un stockage inconnu.
+Other builders: PTM recognises several common page-level signatures conservatively and prefers a manual fallback over modifying unknown builder storage.
 
-= Données et confidentialité =
+= Data and privacy =
 
-PTM n'envoie pas les résultats d'audit à l'éditeur du plugin et n'intègre pas de télémétrie publicitaire.
+PTM does not send site-audit results to the plugin author and does not include advertising telemetry.
 
-Les préférences de consentement des visiteurs sont enregistrées localement dans leur navigateur. Les données d'administration et d'audit restent dans la base WordPress du site sauf action explicite vers un service externe documenté ci-dessous.
+Visitor consent preferences are stored locally in the visitor's browser. Administration and audit data stay in the site's WordPress database unless an administrator explicitly starts the documented external lookup below.
 
-= Service externe facultatif : API Recherche d'entreprises =
+= Optional external service: French company search API =
 
-PTM peut proposer une recherche facultative d'entreprise française pour préremplir des informations publiques. Cette recherche n'est exécutée qu'après un clic explicite d'un administrateur.
+PTM can offer an optional French company lookup to prefill public organisation information. The lookup only runs after an administrator explicitly starts it.
 
-Le terme recherché (nom, SIREN ou SIRET) est alors envoyé à l'API publique Recherche d'entreprises opérée par la Direction interministérielle du numérique (DINUM). Aucun résultat de scan du site n'est envoyé avec cette requête.
+The search term (company name, SIREN, or SIRET) is sent to the public Recherche d'entreprises API operated by the French Interministerial Digital Directorate (DINUM). No PTM site-audit result is sent with that request.
 
-Service : https://annuaire-entreprises.data.gouv.fr/donnees/api-entreprises
-Documentation API : https://recherche-entreprises.api.gouv.fr/docs/
+Service information: https://annuaire-entreprises.data.gouv.fr/donnees/api-entreprises
+API documentation: https://recherche-entreprises.api.gouv.fr/docs/
 
 == Installation ==
 
-1. Téléversez l'archive de Pixel Trackers Manager dans Extensions > Ajouter une extension.
-2. Activez l'extension.
-3. Ouvrez Pixel Trackers Manager : l'assistant de configuration se lance à la première ouverture, pas pendant l'activation.
-4. Vérifiez les trois pages juridiques de référence proposées.
-5. Lancez une analyse lorsque vous le souhaitez ; aucune analyse complète n'est déclenchée automatiquement par l'installation.
-6. Activez la bannière native dans Consentement uniquement si vous souhaitez que PTM gère aussi le blocage et le choix des visiteurs.
+1. Upload the Pixel Trackers Manager ZIP through Plugins > Add Plugin > Upload Plugin.
+2. Activate the plugin.
+3. Open Pixel Trackers Manager. The guided setup starts on first access, not during activation.
+4. Review the proposed Legal Notice, Privacy Policy, and Cookies / Consent reference pages.
+5. Start an analysis when you choose. Installation does not automatically launch a full-site scan.
+6. Enable the native consent interface only if you want PTM to manage visitor choices and blocking as well.
 
 == Frequently Asked Questions ==
 
-= Pixel Trackers Manager rend-il automatiquement mon site conforme au RGPD ? =
+= Does Pixel Trackers Manager automatically make my site GDPR compliant? =
 
-Non. PTM fournit des observations techniques, aide à documenter les traitements et peut gérer un mécanisme de consentement. La conformité dépend toujours du contexte réel et des obligations applicables.
+No. PTM provides technical observations, helps document relevant practices, and can manage a consent mechanism. Compliance still depends on the site's actual context and applicable obligations.
 
-= Des données d'audit sont-elles envoyées à l'éditeur ? =
+= Are audit results sent to the plugin author? =
 
-Non. Les analyses, réglages et réponses de l'assistant restent dans votre WordPress. Seule la recherche facultative d'entreprise contacte l'API publique correspondante après votre clic.
+No. Audit results, settings, and assistant answers stay in your WordPress installation. Only the optional company lookup contacts the documented public API after an administrator starts that lookup.
 
-= La bannière est-elle activée automatiquement ? =
+= Is the consent interface enabled automatically? =
 
-Non. Elle est désactivée par défaut. Si vous l'activez, les services facultatifs reconnus sont ensuite bloqués jusqu'au choix du visiteur.
+No. It is disabled by default. If you enable it, recognised optional services are then blocked until the visitor makes a choice.
 
-= PTM remplace-t-il une solution de sécurité ? =
+= Does PTM replace a security plugin? =
 
-Non. PTM contrôle des aspects de confidentialité et de documentation. Il ne remplace pas un pare-feu, un antivirus, un scanner de vulnérabilités ou un outil de durcissement généraliste.
+No. PTM focuses on privacy-related technical checks and documentation. It does not replace a firewall, malware scanner, vulnerability scanner, or general WordPress hardening tool.
 
 == Changelog ==
 
 = 0.0.2-test4 =
-* Assistant RGPD dans un onglet dédié et sauvegardes AJAX sans audit HTTP implicite.
-* Navigation et vue d'ensemble responsive retravaillées.
-* Pages non publiques distinguées des vraies erreurs HTTP.
-* Création guidée de pages juridiques avec compatibilité Elementor et Divi.
-* Rôles juridiques et contacts mieux séparés dans la documentation générée.
-* Outils externes, conservation et sauvegardes mieux documentés.
-* Bannière de consentement rendue indépendante des builders et contrôle Gérer mes choix fiabilisé.
-* Compatibilité de test ciblée WordPress 7.1.
+* Dedicated GDPR assistant tab with AJAX saves that do not trigger hidden public-page audits.
+* Updated navigation and responsive overview.
+* Non-public WordPress pages separated from genuine public HTTP errors.
+* Guided legal-page creation with Elementor and Divi compatibility.
+* Better separation of legal roles and contact details in generated documentation.
+* Expanded coverage of external tools, retention settings, and backups.
+* Builder-independent consent interface and more reliable Manage my choices control.
+* WordPress 7.1-targeted test matrix.
 
-L'historique détaillé des builds de développement est conservé dans `changelog.txt`.
+Detailed development-build history is kept in `changelog.txt`.
