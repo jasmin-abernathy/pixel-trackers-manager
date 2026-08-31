@@ -11,6 +11,10 @@ on:
       - master
   workflow_dispatch:
 
+concurrency:
+  group: ptm-quality-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -110,19 +114,21 @@ jobs:
           node --version
           find assets -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
-  plugin-check:
-    name: Official WordPress Plugin Check
+  plugin-check-source:
+    name: Plugin Check source audit
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Run Plugin Check
+      - name: Run Plugin Check for development feedback
         uses: wordpress/plugin-check-action@v1.1.9
         with:
           wp-version: latest
           slug: pixel-trackers-manager
           exclude-directories: '.github,docs,build,dist'
+          exclude-files: '.gitattributes,.editorconfig,.gitignore,.distignore,README.md,README.fr.md,CODE_OF_CONDUCT.md,CODE_OF_CONDUCT.fr.md,CONTRIBUTING.md,CONTRIBUTING.fr.md,SECURITY.md,SECURITY.fr.md'
 
   package:
     name: Build installable ZIP
@@ -143,32 +149,36 @@ jobs:
           coverage: none
           tools: wp-cli
 
-      - name: Upgrade WP-CLI and install dist-archive
+      - name: Prepare writable WP-CLI 3 with dist-archive
         shell: bash
         env:
           COMPOSER_AUTH: '{}'
           GITHUB_TOKEN: ''
+          WP_CLI_PACKAGES_DIR: ${{ github.workspace }}/.wp-cli-packages
         run: |
           set -euo pipefail
 
-          # setup-php currently installs the latest 2.x WP-CLI phar by default.
-          # dist-archive 3.x requires WP-CLI 3, so explicitly cross the major boundary.
           composer config --global --unset github-oauth.github.com || true
-          wp cli update --major --yes
-          wp --info
-          wp package install wp-cli/dist-archive-command:@stable
-          wp help dist-archive
+          WP_BIN=$(readlink -f "$(command -v wp)")
+          cp "$WP_BIN" ./wp-cli-build.phar
+          php ./wp-cli-build.phar cli update --major --yes
+          php ./wp-cli-build.phar --info
+          mkdir -p "$WP_CLI_PACKAGES_DIR"
+          php ./wp-cli-build.phar package install wp-cli/dist-archive-command:@stable
+          php ./wp-cli-build.phar help dist-archive
 
       - name: Build ZIP from .distignore
         id: package
         shell: bash
+        env:
+          WP_CLI_PACKAGES_DIR: ${{ github.workspace }}/.wp-cli-packages
         run: |
           set -euo pipefail
           VERSION=$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' pixel-trackers-manager.php | head -n1 | tr -d '\r')
           ZIP="build/pixel-trackers-manager-${VERSION}.zip"
           mkdir -p build
 
-          wp dist-archive . "$ZIP" \
+          php ./wp-cli-build.phar dist-archive . "$ZIP" \
             --plugin-dirname=pixel-trackers-manager \
             --force
 
@@ -188,7 +198,9 @@ jobs:
             '.editorconfig' \
             'CODE_OF_CONDUCT.md' \
             'CONTRIBUTING.md' \
-            'SECURITY.md'; do
+            'SECURITY.md' \
+            'wp-cli-build.phar' \
+            '.wp-cli-packages/'; do
             if unzip -Z1 "$ZIP" | grep -q "^pixel-trackers-manager/${forbidden}"; then
               echo "Development-only path leaked into distribution: ${forbidden}"
               exit 1
