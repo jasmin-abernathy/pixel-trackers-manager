@@ -2,20 +2,18 @@
 
 [Read in English](README.md)
 
-Pixel Trackers Manager (PTM) est un assistant WordPress **local-first** d’audit de confidentialité et de documentation, développé par **Le Potager du Web**.
+Pixel Trackers Manager (PTM) est un assistant WordPress **local-first** d’audit de confidentialité, de documentation et de consentement, développé par **Le Potager du Web**.
 
 Il aide l’administrateur à comprendre ce que fait réellement son site : repérer les traceurs et services tiers, contrôler les pages légales, documenter les pratiques liées aux données et, s’il le souhaite, gérer le consentement des visiteurs.
 
-> **État actuel :** version de test `0.0.2-test4`. PTM n’est pas un outil de certification juridique et ne remplace pas une analyse adaptée à l’activité réelle de l’organisation.
->
-> **Synchronisation du dépôt — 30 août 2026 :** `0.0.2-test4` reste la version de référence. Aucune décision produit postérieure ne justifie un changement de version ; la documentation et la matrice de test intègrent désormais explicitement la validation WordPress 7.1 avant une soumission à WordPress.org.
+> **État actuel :** build de développement `0.0.2-test4`. PTM n’est pas un outil de certification juridique et ne remplace pas une analyse adaptée à l’activité réelle de l’organisation.
 
 ## Principes du projet
 
 - **Détecter d’abord, demander ensuite.** PTM réutilise les informations déjà présentes dans WordPress avant de les redemander.
-- **Local par défaut.** Les résultats d’audit, réglages et réponses restent dans WordPress, sauf action explicite de l’administrateur vers un service externe.
+- **Local par défaut.** Les résultats d’audit, réglages et réponses restent dans WordPress, sauf action explicite de l’administrateur vers un service externe documenté.
 - **Aucune publication juridique silencieuse.** PTM peut préparer des brouillons et proposer des mises à jour, mais les changements publics importants demandent une validation explicite.
-- **Pas de dark patterns.** Si l’interface de consentement native est activée, Accepter et Refuser doivent garder le même poids visuel.
+- **Pas de dark patterns.** Si l’interface de consentement native est activée, Accepter et Refuser gardent le même poids visuel.
 - **Moteur indépendant des builders.** Le consentement fonctionne au niveau WordPress ; Elementor, Divi et les autres constructeurs sont des couches de compatibilité, pas des dépendances.
 - **Écriture prudente.** Si PTM ne comprend pas assez sûrement la structure interne d’un constructeur, il utilise un shortcode ou un parcours manuel plutôt que de réécrire des données inconnues.
 
@@ -41,54 +39,88 @@ Il aide l’administrateur à comprendre ce que fait réellement son site : rep�
 ### Consentement
 
 - barre native ou encart centré facultatif ;
+- interface montée globalement sous `<body>`, indépendante de Divi/Elementor ;
 - blocage par défaut des services facultatifs reconnus une fois la fonction activée ;
 - même poids visuel pour Tout accepter et Tout refuser ;
-- contrôle permanent « Gérer mes choix » ;
-- mode de test administrateur et travail de compatibilité avec les modules dynamiques des builders.
+- contrôle permanent **Gérer mes choix** ;
+- API publique légère pour les intégrations de thème/builder ;
+- mode de test administrateur et compatibilité prudente avec les modules dynamiques.
 
 ### Compréhension de l’écosystème WordPress
 
-PTM peut exploiter ou inspecter, de manière prudente, des informations provenant de WordPress/Gutenberg, Elementor, Divi, certains plugins de formulaires, de sauvegarde, de consentement ou d’analytics.
+PTM peut exploiter ou inspecter prudemment des informations provenant de WordPress/Gutenberg, Elementor, Divi, certains plugins de formulaires, de sauvegarde, de consentement ou d’analytics.
 
 Le projet prévoit aussi de couvrir les pratiques qui ont lieu **en dehors de WordPress** lorsque le site ne peut pas les révéler : envois groupés depuis Gmail/Outlook, contacts WhatsApp, outils de réservation comme Calendly/Koalendar, formulaires externes, HelloAsso, paiements, tableurs ou stockage cloud.
 
+## ZIP installable automatique
+
+Le dépôt génère désormais automatiquement une archive propre à chaque push sur `master`.
+
+Dans GitHub :
+
+1. ouvrir **Actions** ;
+2. ouvrir la dernière exécution **PTM quality and distribution** ;
+3. télécharger l’artifact `pixel-trackers-manager-VERSION`.
+
+Le ZIP est construit avec la commande officielle WP-CLI `wp dist-archive` et `.distignore`. Il contient uniquement les fichiers nécessaires à l’installation WordPress : pas de workflows GitHub, documentation de développement, fichiers de contribution ou fichiers temporaires.
+
+Le workflow vérifie également :
+
+- cohérence entre le header `Version`, la constante runtime et `Stable tag` ;
+- syntaxe PHP sous PHP 7.4, 8.3 et 8.4 ;
+- syntaxe JavaScript ;
+- taille et métadonnées du `readme.txt` ;
+- maximum de cinq tags WordPress.org ;
+- **Plugin Check officiel WordPress** ;
+- intégrité et SHA-256 du ZIP.
+
 ## Installation de test
 
-1. Placez le dépôt dans `wp-content/plugins/pixel-trackers-manager/`, ou construisez un ZIP du dossier du plugin.
+1. Téléchargez le ZIP produit par GitHub Actions ou placez le dépôt dans `wp-content/plugins/pixel-trackers-manager/`.
 2. Activez **Pixel Trackers Manager** dans WordPress.
 3. Ouvrez PTM une première fois pour lancer l’assistant de configuration.
 
-Prérequis de la version de test :
+Prérequis actuels :
 
 - WordPress 6.5+
 - PHP 7.4+
 
-Les métadonnées du plugin ciblent actuellement WordPress 7.1. Avant toute publication d’une build sur WordPress.org, la section dédiée à WordPress 7.1 dans la checklist courante doit être validée sur cette build.
+Les métadonnées ciblent actuellement WordPress 7.1. Avant toute publication d’une build sur WordPress.org, la matrice WordPress 7.1 doit être réellement validée sur cette build.
+
+## Versionnement et WordPress.org
+
+`0.0.2-test4` reste un numéro de **développement GitHub**. Une vraie version publiée dans le répertoire WordPress.org utilisera un numéro strictement numérique, par exemple `0.0.2` ou `0.1.0`, identique dans le header PHP, la constante runtime et le `Stable tag`.
+
+Le dépôt SVN WordPress.org servira uniquement aux publications et ne sera pas utilisé comme miroir de chaque commit GitHub.
+
+Voir [`docs/WORDPRESS-ORG-RELEASE.md`](docs/WORDPRESS-ORG-RELEASE.md) pour la procédure complète.
 
 ## Documentation
 
 - [`README.md`](README.md) — présentation du projet en anglais.
-- [`docs/STATUS-2026-08-30.md`](docs/STATUS-2026-08-30.md) — dernier point de synchronisation du produit et du dépôt.
+- [`docs/WORDPRESS-ORG-RELEASE.md`](docs/WORDPRESS-ORG-RELEASE.md) — préparation et publication WordPress.org.
+- [`docs/CONSENT-INTEGRATION.md`](docs/CONSENT-INTEGRATION.md) — intégration de la bannière avec les builders.
+- [`docs/STATUS-2026-08-30.md`](docs/STATUS-2026-08-30.md) — dernier point de consolidation produit.
 - [`docs/USER-GUIDE.fr.md`](docs/USER-GUIDE.fr.md) — guide utilisateur français.
 - [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md) — guide utilisateur anglais.
-- `docs/TESTS-0.0.2-test4.md` — checklist de validation actuelle, incluant WordPress 7.1.
+- `docs/TESTS-0.0.2-test4.md` — checklist de validation actuelle.
 - `docs/CAHIER-DES-CHARGES.md` — cahier des charges et feuille de route interne.
-- `changelog.txt` — historique détaillé des versions de test.
+- `changelog.txt` — historique détaillé des builds de développement.
 - [`CONTRIBUTING.fr.md`](CONTRIBUTING.fr.md) — guide de contribution en français.
 - [`SECURITY.fr.md`](SECURITY.fr.md) — politique de signalement des vulnérabilités.
 
 ## Développement
 
-Le dépôt sert actuellement au développement pré-publication. La branche de référence doit rester installable ; les changements non terminés devraient, lorsque possible, passer par une branche de développement ou de fonctionnalité.
+Le dépôt sert au développement pré-publication. La branche de référence doit rester installable ; les changements non terminés devraient, lorsque possible, passer par une branche de fonctionnalité.
 
 Avant de retenir une version candidate à la publication, PTM doit au minimum passer :
 
-- les contrôles de syntaxe PHP ;
-- les contrôles de syntaxe JavaScript ;
-- des tests d’activation/désactivation WordPress ;
+- les contrôles automatiques GitHub ;
+- les tests d’activation/désactivation WordPress ;
 - la checklist manuelle de la version courante ;
-- la validation explicite sous WordPress 7.1 tant que les métadonnées annoncent `Tested up to: 7.1` ;
-- les vérifications spécifiques WordPress.org lorsque nous sélectionnerons une build pour le catalogue.
+- la validation réelle WordPress 7.1 ;
+- les tests Gutenberg, Elementor et Divi ;
+- l’installation du **ZIP exact** produit par GitHub Actions sur un WordPress vierge.
 
 ## Signaler un problème
 
@@ -98,4 +130,4 @@ Pour une vulnérabilité pouvant exposer des données ou compromettre un site, s
 
 ## Licence
 
-Voir [`LICENSE`](LICENSE). La licence et les métadonnées de publication seront revérifiées avant la première soumission au catalogue WordPress.org.
+Voir [`LICENSE`](LICENSE). PTM est distribué sous GPL v2 ou ultérieure.
