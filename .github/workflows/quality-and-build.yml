@@ -136,20 +136,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up PHP and WP-CLI 3
+      - name: Set up PHP and WP-CLI
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           coverage: none
           tools: wp-cli
 
-      - name: Install stable WP-CLI dist-archive command
+      - name: Upgrade WP-CLI and install dist-archive
         shell: bash
         env:
           COMPOSER_AUTH: '{}'
           GITHUB_TOKEN: ''
         run: |
           set -euo pipefail
+
+          # setup-php currently installs the latest 2.x WP-CLI phar by default.
+          # dist-archive 3.x requires WP-CLI 3, so explicitly cross the major boundary.
+          composer config --global --unset github-oauth.github.com || true
+          wp cli update --major --yes
           wp --info
           wp package install wp-cli/dist-archive-command:@stable
           wp help dist-archive
