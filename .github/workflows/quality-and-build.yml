@@ -142,43 +142,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up PHP and WP-CLI
+      - name: Set up PHP and stable WP-CLI
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           coverage: none
           tools: wp-cli
 
-      - name: Prepare writable WP-CLI 3 with dist-archive
+      - name: Install dist-archive command
         shell: bash
         env:
           COMPOSER_AUTH: '{}'
           GITHUB_TOKEN: ''
-          WP_CLI_PACKAGES_DIR: ${{ github.workspace }}/.wp-cli-packages
         run: |
           set -euo pipefail
-
           composer config --global --unset github-oauth.github.com || true
-          WP_BIN=$(readlink -f "$(command -v wp)")
-          cp "$WP_BIN" ./wp-cli-build.phar
-          php ./wp-cli-build.phar cli update --major --yes
-          php ./wp-cli-build.phar --info
-          mkdir -p "$WP_CLI_PACKAGES_DIR"
-          php ./wp-cli-build.phar package install wp-cli/dist-archive-command:@stable
-          php ./wp-cli-build.phar help dist-archive
+          wp --info
+          # WP-CLI 2.12 is the current stable release. dist-archive 3.0.1
+          # supports WP-CLI 2.x and already implements .distignore packaging.
+          wp package install wp-cli/dist-archive-command:3.0.1
+          wp help dist-archive
 
       - name: Build ZIP from .distignore
         id: package
         shell: bash
-        env:
-          WP_CLI_PACKAGES_DIR: ${{ github.workspace }}/.wp-cli-packages
         run: |
           set -euo pipefail
           VERSION=$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' pixel-trackers-manager.php | head -n1 | tr -d '\r')
           ZIP="build/pixel-trackers-manager-${VERSION}.zip"
           mkdir -p build
 
-          php ./wp-cli-build.phar dist-archive . "$ZIP" \
+          wp dist-archive . "$ZIP" \
             --plugin-dirname=pixel-trackers-manager \
             --force
 
