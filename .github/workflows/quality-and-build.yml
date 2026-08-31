@@ -56,6 +56,15 @@ jobs:
             exit 1
           fi
 
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+            if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
+              echo "Formal release tags must be numeric, for example v0.1.0."
+              exit 1
+            fi
+            test "${RELEASE_VERSION}" = "${PLUGIN_VERSION}"
+          fi
+
           {
             echo "### PTM metadata"
             echo "- Version: \`${PLUGIN_VERSION}\`"
@@ -127,19 +136,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up PHP
+      - name: Set up PHP and WP-CLI 3
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           coverage: none
+          tools: wp-cli
 
-      - name: Install WP-CLI dist-archive
+      - name: Install stable WP-CLI dist-archive command
         shell: bash
+        env:
+          COMPOSER_AUTH: '{}'
+          GITHUB_TOKEN: ''
         run: |
           set -euo pipefail
-          curl -fsSL -o wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-          php wp-cli.phar --info
-          php wp-cli.phar package install wp-cli/dist-archive-command
+          wp --info
+          wp package install wp-cli/dist-archive-command:@stable
+          wp help dist-archive
 
       - name: Build ZIP from .distignore
         id: package
@@ -150,7 +163,7 @@ jobs:
           ZIP="build/pixel-trackers-manager-${VERSION}.zip"
           mkdir -p build
 
-          php wp-cli.phar dist-archive . "$ZIP" \
+          wp dist-archive . "$ZIP" \
             --plugin-dirname=pixel-trackers-manager \
             --force
 
@@ -168,6 +181,7 @@ jobs:
             '.gitignore' \
             '.gitattributes' \
             '.editorconfig' \
+            'CODE_OF_CONDUCT.md' \
             'CONTRIBUTING.md' \
             'SECURITY.md'; do
             if unzip -Z1 "$ZIP" | grep -q "^pixel-trackers-manager/${forbidden}"; then
@@ -191,6 +205,7 @@ jobs:
       - name: Upload installable ZIP
         uses: actions/upload-artifact@v7
         with:
+          name: pixel-trackers-manager-${{ steps.package.outputs.version }}
           path: ${{ steps.package.outputs.zip }}
           archive: false
           retention-days: 30
