@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - master
+    paths:
+      - '.github/workflows/plugin-check-autofix-once.yml'
 
 permissions:
   contents: write
 
 jobs:
   autofix:
-    if: github.event.head_commit.message == 'ci: run one-time plugin check autofix'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
