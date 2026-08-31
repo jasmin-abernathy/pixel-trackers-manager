@@ -16,46 +16,12 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  autofix-once:
-    name: Apply audited Plugin Check fixes
-    if: github.event_name == 'push' && github.event.head_commit.message == 'execute audited plugin check fixes'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Apply fixes
-        run: python3 .github/scripts/plugin-check-autofix.py
-
-      - name: Validate modified files
-        shell: bash
-        run: |
-          set -euo pipefail
-          php -l pixel-trackers-manager.php
-          php -l includes/class-pixel-trackers-manager-consent.php
-          node --check assets/consent-bootstrap.js
-          node --check assets/consent.js
-          git diff --check
-          git diff --stat
-
-      - name: Commit fixes
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'Jasmin-potager'
-          git config user.email 'jasmin@lepotager.org'
-          git add pixel-trackers-manager.php includes/class-pixel-trackers-manager-consent.php assets/consent-bootstrap.js
-          git commit -m 'fix: address WordPress Plugin Check findings'
-          git push origin HEAD:master
-
   metadata:
     name: Validate WordPress metadata
     runs-on: ubuntu-latest
@@ -72,22 +38,27 @@ jobs:
           STABLE_TAG=$(sed -n 's/^Stable tag:[[:space:]]*//p' readme.txt | head -n1 | tr -d '\r')
           TAG_COUNT=$(grep '^Tags:' readme.txt | cut -d: -f2- | tr ',' '\n' | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')
           README_BYTES=$(wc -c < readme.txt | tr -d ' ')
+
           echo "Plugin header version: ${PLUGIN_VERSION}"
           echo "Runtime constant version: ${CONST_VERSION}"
           echo "Stable tag: ${STABLE_TAG}"
           echo "WordPress.org tags: ${TAG_COUNT}"
           echo "readme.txt size: ${README_BYTES} bytes"
+
           test -n "${PLUGIN_VERSION}"
           test "${PLUGIN_VERSION}" = "${CONST_VERSION}"
           test "${PLUGIN_VERSION}" = "${STABLE_TAG}"
+
           if [ "${TAG_COUNT}" -gt 5 ]; then
             echo "readme.txt contains more than five WordPress.org tags."
             exit 1
           fi
+
           if [ "${README_BYTES}" -gt 10240 ]; then
             echo "readme.txt is larger than 10 KiB. Keep the directory readme concise."
             exit 1
           fi
+
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             RELEASE_VERSION="${GITHUB_REF_NAME#v}"
             if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
@@ -96,6 +67,7 @@ jobs:
             fi
             test "${RELEASE_VERSION}" = "${PLUGIN_VERSION}"
           fi
+
           {
             echo "### PTM metadata"
             echo "- Version: \`${PLUGIN_VERSION}\`"
@@ -117,11 +89,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: none
+
       - name: Lint PHP files
         shell: bash
         run: find . -type f -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
@@ -132,20 +106,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Check JavaScript files
         shell: bash
         run: |
           node --version
           find assets -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
-  plugin-check-source:
-    name: Plugin Check source audit
+  plugin-check:
+    name: Official WordPress Plugin Check
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Run Plugin Check for development feedback
+
+      - name: Run Plugin Check
         uses: wordpress/plugin-check-action@v1.1.9
         with:
           wp-version: latest
@@ -164,12 +139,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Set up PHP and stable WP-CLI
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           coverage: none
           tools: wp-cli
+
       - name: Install dist-archive command
         shell: bash
         env:
@@ -179,8 +156,11 @@ jobs:
           set -euo pipefail
           composer config --global --unset github-oauth.github.com || true
           wp --info
+          # WP-CLI 2.12 is the current stable release. dist-archive 3.0.1
+          # supports WP-CLI 2.x and .distignore-based packaging.
           wp package install wp-cli/dist-archive-command:3.0.1
           wp help dist-archive
+
       - name: Build ZIP from .distignore
         id: package
         shell: bash
@@ -189,31 +169,37 @@ jobs:
           VERSION=$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' pixel-trackers-manager.php | head -n1 | tr -d '\r')
           ZIP="build/pixel-trackers-manager-${VERSION}.zip"
           mkdir -p build
+
           wp dist-archive . "$ZIP" --plugin-dirname=pixel-trackers-manager
+
           unzip -t "$ZIP"
           unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/pixel-trackers-manager.php'
           unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/readme.txt'
           unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/LICENSE'
-          for forbidden in '.github/' 'docs/' 'README.md' 'README.fr.md' '.distignore' '.gitignore' '.gitattributes' '.editorconfig' 'CODE_OF_CONDUCT.md' 'CONTRIBUTING.md' 'SECURITY.md' 'wp-cli-build.phar' '.wp-cli-packages/'; do
+
+          for forbidden in '.github/' 'docs/' 'README.md' 'README.fr.md' '.distignore' '.gitignore' '.gitattributes' '.editorconfig' 'CODE_OF_CONDUCT.md' 'CONTRIBUTING.md' 'SECURITY.md'; do
             if unzip -Z1 "$ZIP" | grep -q "^pixel-trackers-manager/${forbidden}"; then
               echo "Development-only path leaked into distribution: ${forbidden}"
               exit 1
             fi
           done
+
           DIGEST=$(sha256sum "$ZIP" | awk '{print $1}')
           echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
           {
             echo "### Installable PTM ZIP"
             echo "- File: \`pixel-trackers-manager-${VERSION}.zip\`"
             echo "- SHA-256: \`${DIGEST}\`"
             echo "- Built with WordPress' \`wp dist-archive\` command and \`.distignore\`."
           } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload installable ZIP
         uses: actions/upload-artifact@v7
         with:
-          name: pixel-trackers-manager-${{ steps.package.outputs.version }}
+          name: pixel-trackers-manager-${{ steps.package.outputs.version }}.zip
           path: ${{ steps.package.outputs.zip }}
           archive: false
           retention-days: 30
