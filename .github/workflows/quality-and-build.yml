@@ -1,0 +1,196 @@
+name: PTM quality and distribution
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  metadata:
+    name: Validate WordPress metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check version, readme and tags
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PLUGIN_VERSION=$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' pixel-trackers-manager.php | head -n1 | tr -d '\r')
+          CONST_VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" pixel-trackers-manager.php | head -n1 | tr -d '\r')
+          STABLE_TAG=$(sed -n 's/^Stable tag:[[:space:]]*//p' readme.txt | head -n1 | tr -d '\r')
+          TAG_COUNT=$(grep '^Tags:' readme.txt | cut -d: -f2- | tr ',' '\n' | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')
+          README_BYTES=$(wc -c < readme.txt | tr -d ' ')
+
+          echo "Plugin header version: ${PLUGIN_VERSION}"
+          echo "Runtime constant version: ${CONST_VERSION}"
+          echo "Stable tag: ${STABLE_TAG}"
+          echo "WordPress.org tags: ${TAG_COUNT}"
+          echo "readme.txt size: ${README_BYTES} bytes"
+
+          test -n "${PLUGIN_VERSION}"
+          test "${PLUGIN_VERSION}" = "${CONST_VERSION}"
+          test "${PLUGIN_VERSION}" = "${STABLE_TAG}"
+
+          if [ "${TAG_COUNT}" -gt 5 ]; then
+            echo "readme.txt contains more than five WordPress.org tags."
+            exit 1
+          fi
+
+          if [ "${README_BYTES}" -gt 10240 ]; then
+            echo "readme.txt is larger than 10 KiB. Keep the directory readme concise."
+            exit 1
+          fi
+
+          {
+            echo "### PTM metadata"
+            echo "- Version: \`${PLUGIN_VERSION}\`"
+            echo "- Stable tag: \`${STABLE_TAG}\`"
+            echo "- WordPress.org tags: ${TAG_COUNT}/5"
+            echo "- readme.txt: ${README_BYTES} bytes"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  php-lint:
+    name: PHP ${{ matrix.php }} syntax
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '7.4'
+          - '8.3'
+          - '8.4'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint PHP files
+        shell: bash
+        run: find . -type f -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
+
+  javascript-syntax:
+    name: JavaScript syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check JavaScript files
+        shell: bash
+        run: |
+          node --version
+          find assets -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+  plugin-check:
+    name: Official WordPress Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run Plugin Check
+        uses: wordpress/plugin-check-action@v1.1.9
+        with:
+          wp-version: latest
+          slug: pixel-trackers-manager
+          exclude-directories: '.github,docs,build,dist'
+
+  package:
+    name: Build installable ZIP
+    if: github.event_name != 'pull_request'
+    needs:
+      - metadata
+      - php-lint
+      - javascript-syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install WP-CLI dist-archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -o wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          php wp-cli.phar --info
+          php wp-cli.phar package install wp-cli/dist-archive-command
+
+      - name: Build ZIP from .distignore
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' pixel-trackers-manager.php | head -n1 | tr -d '\r')
+          ZIP="build/pixel-trackers-manager-${VERSION}.zip"
+          mkdir -p build
+
+          php wp-cli.phar dist-archive . "$ZIP" \
+            --plugin-dirname=pixel-trackers-manager \
+            --force
+
+          unzip -t "$ZIP"
+          unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/pixel-trackers-manager.php'
+          unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/readme.txt'
+          unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/LICENSE'
+
+          for forbidden in \
+            '.github/' \
+            'docs/' \
+            'README.md' \
+            'README.fr.md' \
+            '.distignore' \
+            '.gitignore' \
+            '.gitattributes' \
+            '.editorconfig' \
+            'CONTRIBUTING.md' \
+            'SECURITY.md'; do
+            if unzip -Z1 "$ZIP" | grep -q "^pixel-trackers-manager/${forbidden}"; then
+              echo "Development-only path leaked into distribution: ${forbidden}"
+              exit 1
+            fi
+          done
+
+          DIGEST=$(sha256sum "$ZIP" | awk '{print $1}')
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Installable PTM ZIP"
+            echo "- File: \`pixel-trackers-manager-${VERSION}.zip\`"
+            echo "- SHA-256: \`${DIGEST}\`"
+            echo "- Built with WordPress' \`wp dist-archive\` command and \`.distignore\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload installable ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.package.outputs.zip }}
+          archive: false
+          retention-days: 30
