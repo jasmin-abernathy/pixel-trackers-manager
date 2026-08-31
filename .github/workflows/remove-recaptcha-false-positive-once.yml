@@ -1,0 +1,45 @@
+name: PTM final Plugin Check false-positive fix
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/remove-recaptcha-false-positive-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Remove redundant generic reCAPTCHA script signature
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('pixel-trackers-manager.php')
+          text = path.read_text(encoding='utf-8')
+          old = "                // Split the script-like signature because PTM detects this text in page markup; it does not load the remote file.\n                'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha/' . 'api.js' ),"
+          new = "                'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha' ),"
+          if text.count(old) != 1:
+              raise SystemExit('Expected one reCAPTCHA detection signature block.')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          php -l pixel-trackers-manager.php
+          git diff --check
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name 'Jasmin-potager'
+          git config user.email 'jasmin@lepotager.org'
+          git add pixel-trackers-manager.php
+          git commit -m 'fix: remove redundant reCAPTCHA detection signature'
+          git push origin HEAD:master
