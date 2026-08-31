@@ -18,6 +18,8 @@ dist/
 coverage/
 tmp/
 node_modules/
+.wp-cli-packages/
+wp-cli-build.phar
 .env
 .env.*
 *.log
