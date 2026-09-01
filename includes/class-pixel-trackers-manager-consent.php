@@ -390,7 +390,7 @@ final class Pixel_Trackers_Manager_Consent {
         $key = 'pixel_trackers_manager_browser_probe_' . hash( 'sha256', $token );
         if ( ! get_transient( $key ) ) { return; }
         delete_transient( $key );
-        if ( ! defined( 'DONOTCACHEPAGE' ) ) { define( 'DONOTCACHEPAGE', true ); }
+        if ( ! headers_sent() ) { nocache_headers(); }
         show_admin_bar( false );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_browser_audit_probe' ), PHP_INT_MAX - 200 );
     }

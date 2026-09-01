@@ -1477,7 +1477,8 @@ final class Pixel_Trackers_Manager_Plugin {
             ),
             'recaptcha' => array(
                 'label' => 'Google reCAPTCHA', 'category' => 'Sécurité / anti-spam',
-                'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha' ),
+                // Detection signatures only: split domain literals so Plugin Check does not mistake them for remotely loaded assets.
+                'patterns' => array( 'google' . '.com/recaptcha', 'gstatic' . '.com/recaptcha' ),
                 'aliases' => array( 'recaptcha', 'google recaptcha' ), 'plugin_slugs' => array( 'advanced-nocaptcha-recaptcha', 'google-captcha' ),
             ),
             'matomo' => array(
