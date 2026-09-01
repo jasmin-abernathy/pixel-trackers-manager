@@ -45,14 +45,6 @@ jobs:
           if text.count(old) != 1:
               raise SystemExit('Expected one generic reCAPTCHA signature line.')
           plugin.write_text(text.replace(old, new, 1), encoding='utf-8')
-
-          workflow = Path('.github/workflows/quality-and-build.yml')
-          text = workflow.read_text(encoding='utf-8')
-          old = "SECURITY.md,SECURITY.fr.md'"
-          new = "SECURITY.md,SECURITY.fr.md,TRADEMARKS.md,COPYRIGHT.md'"
-          if text.count(old) != 1:
-              raise SystemExit('Expected one Plugin Check exclude-files list.')
-          workflow.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
 
           php -l includes/class-pixel-trackers-manager-consent.php
@@ -66,6 +58,6 @@ jobs:
         run: |
           git config user.name 'Jasmin-potager'
           git config user.email 'jasmin@lepotager.org'
-          git add includes/class-pixel-trackers-manager-consent.php pixel-trackers-manager.php .github/workflows/quality-and-build.yml
+          git add includes/class-pixel-trackers-manager-consent.php pixel-trackers-manager.php
           git commit -m 'fix: satisfy Plugin Check for interop audit'
           git push origin HEAD:feature/interop-browser-rules
