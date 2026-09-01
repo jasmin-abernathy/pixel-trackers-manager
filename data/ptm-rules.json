@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog_version": "0.1.0",
+  "source": "jasmin-abernathy/ptm-rules",
+  "services": [
+    {"id":"google-analytics","label":"Google Analytics","category":"analytics","ptm_category":"statistics","wp_consent_category":"statistics","patterns":["google-analytics.com","googletagmanager.com/gtag/js","gtag("],"wordpress_plugin_slugs":["google-site-kit","ga-google-analytics","monsterinsights","google-analytics-for-wordpress","woocommerce-google-analytics-integration","exactmetrics","exactmetrics-premium"]},
+    {"id":"google-tag-manager","label":"Google Tag Manager","category":"tag_manager","ptm_category":"marketing","wp_consent_category":"marketing","patterns":["googletagmanager.com/gtm.js","GTM-"],"wordpress_plugin_slugs":["duracelltomi-google-tag-manager","google-tag-manager","google-site-kit"]},
+    {"id":"meta-pixel","label":"Meta Pixel","category":"advertising","ptm_category":"marketing","wp_consent_category":"marketing","patterns":["connect.facebook.net","facebook.com/tr","fbevents.js"],"wordpress_plugin_slugs":["facebook-for-woocommerce","official-facebook-pixel"]},
+    {"id":"clarity","label":"Microsoft Clarity","category":"analytics","ptm_category":"statistics","wp_consent_category":"statistics","patterns":["clarity.ms","clarity("],"wordpress_plugin_slugs":["microsoft-clarity"]},
+    {"id":"hotjar","label":"Hotjar","category":"analytics","ptm_category":"statistics","wp_consent_category":"statistics","patterns":["hotjar.com","static.hotjar.com","hj("],"wordpress_plugin_slugs":["hotjar"]},
+    {"id":"matomo","label":"Matomo","category":"analytics","ptm_category":"statistics","wp_consent_category":"statistics","patterns":["matomo.js","matomo.php","piwik.js","piwik.php"],"wordpress_plugin_slugs":["matomo","wp-piwik"]},
+    {"id":"plausible","label":"Plausible Analytics","category":"analytics","ptm_category":"statistics","wp_consent_category":"statistics","patterns":["plausible.io/js/","plausible.io/api/event"],"wordpress_plugin_slugs":["plausible-analytics"]},
+    {"id":"youtube","label":"YouTube","category":"media","ptm_category":"external","wp_consent_category":"preferences","patterns":["youtube.com/embed/","youtube-nocookie.com/embed/","youtube.com/iframe_api"],"wordpress_plugin_slugs":[]},
+    {"id":"vimeo","label":"Vimeo","category":"media","ptm_category":"external","wp_consent_category":"preferences","patterns":["player.vimeo.com","vimeo.com/video/"],"wordpress_plugin_slugs":[]},
+    {"id":"google-maps","label":"Google Maps","category":"maps","ptm_category":"external","wp_consent_category":"preferences","patterns":["google.com/maps/embed","maps.google.com/maps/embed","maps.googleapis.com"],"wordpress_plugin_slugs":[]},
+    {"id":"tiktok-pixel","label":"TikTok Pixel","category":"advertising","ptm_category":"marketing","wp_consent_category":"marketing","patterns":["analytics.tiktok.com","ttq.load("],"wordpress_plugin_slugs":["official-tiktok-pixel"]},
+    {"id":"linkedin-insight","label":"LinkedIn Insight Tag","category":"advertising","ptm_category":"marketing","wp_consent_category":"marketing","patterns":["snap.licdn.com","linkedin.com/insight"],"wordpress_plugin_slugs":[]},
+    {"id":"pinterest-tag","label":"Pinterest Tag","category":"advertising","ptm_category":"marketing","wp_consent_category":"marketing","patterns":["s.pinimg.com/ct","pintrk("],"wordpress_plugin_slugs":[]},
+    {"id":"brevo","label":"Brevo","category":"forms_marketing","ptm_category":"marketing","wp_consent_category":"marketing","patterns":["sibforms.com","sendinblue.com","brevo.com"],"wordpress_plugin_slugs":["mailin"]},
+    {"id":"recaptcha","label":"Google reCAPTCHA","category":"security_external","ptm_category":"review","wp_consent_category":null,"patterns":["google.com/recaptcha/","g-recaptcha","recaptcha/api.js"],"wordpress_plugin_slugs":[],"note":"Vérification humaine requise selon contexte."}
+  ]
+}
