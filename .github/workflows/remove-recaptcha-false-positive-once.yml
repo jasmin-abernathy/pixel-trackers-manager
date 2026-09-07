@@ -1,11 +1,8 @@
 name: PTM final Plugin Check false-positive fix
 
+# Historical one-off maintenance workflow. It no longer runs automatically.
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/remove-recaptcha-false-positive-once.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,6 +10,7 @@ permissions:
 jobs:
   patch:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v7
