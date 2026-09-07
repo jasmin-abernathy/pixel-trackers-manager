@@ -6,13 +6,29 @@ on:
       - master
     tags:
       - 'v*'
+    paths:
+      - 'pixel-trackers-manager.php'
+      - 'includes/**'
+      - 'assets/**'
+      - 'languages/**'
+      - 'readme.txt'
+      - '.distignore'
+      - '.github/workflows/quality-and-build.yml'
   pull_request:
     branches:
       - master
+    paths:
+      - 'pixel-trackers-manager.php'
+      - 'includes/**'
+      - 'assets/**'
+      - 'languages/**'
+      - 'readme.txt'
+      - '.distignore'
+      - '.github/workflows/quality-and-build.yml'
   workflow_dispatch:
 
 concurrency:
-  group: ptm-quality-${{ github.ref }}
+  group: ptm-quality-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -22,9 +38,40 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  quick-check:
+    name: Quick branch check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Metadata consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          PLUGIN_VERSION=$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' pixel-trackers-manager.php | head -n1 | tr -d '\r')
+          CONST_VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" pixel-trackers-manager.php | head -n1 | tr -d '\r')
+          STABLE_TAG=$(sed -n 's/^Stable tag:[[:space:]]*//p' readme.txt | head -n1 | tr -d '\r')
+          test -n "$PLUGIN_VERSION"
+          test "$PLUGIN_VERSION" = "$CONST_VERSION"
+          test "$PLUGIN_VERSION" = "$STABLE_TAG"
+      - name: PHP syntax
+        run: find . -type f -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
+      - name: JavaScript syntax
+        shell: bash
+        run: find assets -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
   metadata:
     name: Validate WordPress metadata
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -68,17 +115,11 @@ jobs:
             test "${RELEASE_VERSION}" = "${PLUGIN_VERSION}"
           fi
 
-          {
-            echo "### PTM metadata"
-            echo "- Version: \`${PLUGIN_VERSION}\`"
-            echo "- Stable tag: \`${STABLE_TAG}\`"
-            echo "- WordPress.org tags: ${TAG_COUNT}/5"
-            echo "- readme.txt: ${README_BYTES} bytes"
-          } >> "$GITHUB_STEP_SUMMARY"
-
   php-lint:
     name: PHP ${{ matrix.php }} syntax
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -89,37 +130,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-
       - name: Lint PHP files
         shell: bash
         run: find . -type f -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
 
   javascript-syntax:
     name: JavaScript syntax
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 6
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
       - name: Check JavaScript files
         shell: bash
-        run: |
-          node --version
-          find assets -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+        run: find assets -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
   plugin-check:
     name: Official WordPress Plugin Check
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
       - name: Run Plugin Check
         uses: wordpress/plugin-check-action@v1.1.9
         with:
@@ -130,12 +169,13 @@ jobs:
 
   package:
     name: Build installable ZIP
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     needs:
       - metadata
       - php-lint
       - javascript-syntax
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -156,8 +196,6 @@ jobs:
           set -euo pipefail
           composer config --global --unset github-oauth.github.com || true
           wp --info
-          # WP-CLI 2.12 is the current stable release. dist-archive 3.0.1
-          # supports WP-CLI 2.x and .distignore-based packaging.
           wp package install wp-cli/dist-archive-command:3.0.1
           wp help dist-archive
 
@@ -189,17 +227,10 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
-          {
-            echo "### Installable PTM ZIP"
-            echo "- File: \`pixel-trackers-manager-${VERSION}.zip\`"
-            echo "- SHA-256: \`${DIGEST}\`"
-            echo "- Built with WordPress' \`wp dist-archive\` command and \`.distignore\`."
-          } >> "$GITHUB_STEP_SUMMARY"
-
       - name: Upload installable ZIP
         uses: actions/upload-artifact@v7
         with:
           name: pixel-trackers-manager-${{ steps.package.outputs.version }}.zip
           path: ${{ steps.package.outputs.zip }}
           archive: false
-          retention-days: 30
+          retention-days: 7
