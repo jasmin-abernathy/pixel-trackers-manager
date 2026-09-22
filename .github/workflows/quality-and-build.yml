@@ -165,7 +165,7 @@ jobs:
           wp-version: latest
           slug: pixel-trackers-manager
           exclude-directories: '.github,docs,build,dist'
-          exclude-files: '.gitattributes,.editorconfig,.gitignore,.distignore,README.md,README.fr.md,CODE_OF_CONDUCT.md,CODE_OF_CONDUCT.fr.md,CONTRIBUTING.md,CONTRIBUTING.fr.md,SECURITY.md,SECURITY.fr.md'
+          exclude-files: '.gitattributes,.editorconfig,.gitignore,.distignore,README.md,README.fr.md,CODE_OF_CONDUCT.md,CODE_OF_CONDUCT.fr.md,CONTRIBUTING.md,CONTRIBUTING.fr.md,SECURITY.md,SECURITY.fr.md,TRADEMARKS.md,COPYRIGHT.md'
 
   package:
     name: Build installable ZIP
