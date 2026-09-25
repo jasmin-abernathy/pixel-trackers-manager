@@ -28,3 +28,6 @@ wp-cli-build.phar
 *.zip
 .DS_Store
 Thumbs.db
+AGENTS.md
+COPYRIGHT.md
+TRADEMARKS.md

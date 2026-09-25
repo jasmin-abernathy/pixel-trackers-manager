@@ -1,4 +1,4 @@
-Pixel Trackers Manager 0.0.2-test4
+Pixel Trackers Manager 0.0.2
 
 - Correctif consentement du 30 août 2026 : la bannière est désormais montée directement sous `<body>` afin de sortir des contextes d’empilement propres à Divi, Elementor et aux thèmes ; les propriétés structurelles du calque sont protégées contre les surcharges de builder.
 - Les contrôles « Gérer mes choix » sont désormais interceptés en phase capture et peuvent être placés dans Divi, Elementor, Gutenberg, un menu, un footer ou une popup via `.ptm-consent-open` ou `data-ptm-consent-open="preferences"`.

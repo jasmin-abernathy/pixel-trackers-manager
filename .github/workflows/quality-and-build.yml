@@ -165,39 +165,21 @@ jobs:
           wp-version: latest
           slug: pixel-trackers-manager
           exclude-directories: '.github,docs,build,dist'
-          exclude-files: '.gitattributes,.editorconfig,.gitignore,.distignore,README.md,README.fr.md,CODE_OF_CONDUCT.md,CODE_OF_CONDUCT.fr.md,CONTRIBUTING.md,CONTRIBUTING.fr.md,SECURITY.md,SECURITY.fr.md'
+          exclude-files: '.gitattributes,.editorconfig,.gitignore,.distignore,README.md,README.fr.md,CODE_OF_CONDUCT.md,CODE_OF_CONDUCT.fr.md,CONTRIBUTING.md,CONTRIBUTING.fr.md,SECURITY.md,SECURITY.fr.md,AGENTS.md,COPYRIGHT.md,TRADEMARKS.md'
 
   package:
     name: Build installable ZIP
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     needs:
       - metadata
       - php-lint
       - javascript-syntax
+      - plugin-check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Set up PHP and stable WP-CLI
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          coverage: none
-          tools: wp-cli
-
-      - name: Install dist-archive command
-        shell: bash
-        env:
-          COMPOSER_AUTH: '{}'
-          GITHUB_TOKEN: ''
-        run: |
-          set -euo pipefail
-          composer config --global --unset github-oauth.github.com || true
-          wp --info
-          wp package install wp-cli/dist-archive-command:3.0.1
-          wp help dist-archive
 
       - name: Build ZIP from .distignore
         id: package
@@ -206,16 +188,27 @@ jobs:
           set -euo pipefail
           VERSION=$(sed -n 's/^[[:space:]]*\* Version:[[:space:]]*//p' pixel-trackers-manager.php | head -n1 | tr -d '\r')
           ZIP="build/pixel-trackers-manager-${VERSION}.zip"
-          mkdir -p build
+          STAGE="${RUNNER_TEMP}/ptm-dist"
+          ROOT="${STAGE}/pixel-trackers-manager"
 
-          wp dist-archive . "$ZIP" --plugin-dirname=pixel-trackers-manager
+          rm -rf "$STAGE"
+          mkdir -p "$ROOT" build
+
+          # Keep release creation independent from third-party WP-CLI package downloads.
+          # .distignore contains the single source of truth for development-only exclusions.
+          rsync -a --exclude-from=.distignore ./ "$ROOT/"
+
+          (
+            cd "$STAGE"
+            zip -qr "${GITHUB_WORKSPACE}/$ZIP" pixel-trackers-manager
+          )
 
           unzip -t "$ZIP"
           unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/pixel-trackers-manager.php'
           unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/readme.txt'
           unzip -Z1 "$ZIP" | grep -qx 'pixel-trackers-manager/LICENSE'
 
-          for forbidden in '.github/' 'docs/' 'README.md' 'README.fr.md' '.distignore' '.gitignore' '.gitattributes' '.editorconfig' 'CODE_OF_CONDUCT.md' 'CONTRIBUTING.md' 'SECURITY.md'; do
+          for forbidden in '.github/' 'docs/' 'README.md' 'README.fr.md' '.distignore' '.gitignore' '.gitattributes' '.editorconfig' 'CODE_OF_CONDUCT.md' 'CONTRIBUTING.md' 'SECURITY.md' 'AGENTS.md' 'COPYRIGHT.md' 'TRADEMARKS.md'; do
             if unzip -Z1 "$ZIP" | grep -q "^pixel-trackers-manager/${forbidden}"; then
               echo "Development-only path leaked into distribution: ${forbidden}"
               exit 1
