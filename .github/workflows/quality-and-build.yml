@@ -169,11 +169,12 @@ jobs:
 
   package:
     name: Build installable ZIP
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     needs:
       - metadata
       - php-lint
       - javascript-syntax
+      - plugin-check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
