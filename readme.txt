@@ -71,6 +71,7 @@ The search term (company name, SIREN, or SIRET) is sent to the public Recherche 
 
 Service information: https://annuaire-entreprises.data.gouv.fr/donnees/api-entreprises
 API documentation: https://recherche-entreprises.api.gouv.fr/docs/
+Service privacy information: https://www.data.gouv.fr/en/suivi/
 
 == Installation ==
 
