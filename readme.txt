@@ -4,7 +4,7 @@ Tags: privacy, gdpr, cookies, consent, trackers
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.0.2-test4
+Stable tag: 0.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,7 +101,7 @@ No. PTM focuses on privacy-related technical checks and documentation. It does n
 
 == Changelog ==
 
-= 0.0.2-test4 =
+= 0.0.2 =
 * Dedicated GDPR assistant tab with AJAX saves that do not trigger hidden public-page audits.
 * Updated navigation and responsive overview.
 * Non-public WordPress pages separated from genuine public HTTP errors.
